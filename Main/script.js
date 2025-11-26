@@ -1,43 +1,63 @@
 (async () => {
-  // Make PIXI globally accessible
-  window.PIXI = PIXI;
+  //
+  // 1. PIXI check
+  //
+  if (typeof PIXI === "undefined") {
+    console.error("❌ PIXI NOT LOADED");
+    return;
+  }
 
-  // Create PIXI application
+  //
+  // 2. Live2D plugin check
+  //
+  if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
+    console.error("❌ pixi-live2d-display NOT LOADED");
+    return;
+  }
+
+  // Import the model constructor
+  const { Live2DModel } = PIXI.live2d;
+
+  //
+  // 3. Create PIXI app
+  //
   const app = new PIXI.Application({
-    width: window.innerWidth,
-    height: window.innerHeight,
-    backgroundColor: 0x1099bb,
-    resizeTo: window
+    background: "#1099bb",
+    resizeTo: window,
   });
 
   document.body.appendChild(app.view);
 
-  const { Live2DModel } = PIXI.live2d;
+  //
+  // 4. Load MODEL3 JSON
+  //
+  const MODEL_PATH =
+    "pixi-live2d-remake/Samples/Resources/Haru/haru.model3.json";
 
   try {
-    // Load Haru model
-    const model = await Live2DModel.from('../Samples/Resources/Haru/haru.model3.json');
+    const model = await Live2DModel.from(MODEL_PATH);
 
-    // Center model on canvas
-    model.x = app.renderer.width / 2;
-    model.y = app.renderer.height / 2;
-    model.scale.set(0.5); // Adjust scale as needed
-    model.anchor.set(0.5, 0.5);
+    // Center and scale model
+    model.anchor.set(0.5);
+    model.scale.set(0.5);
+    model.x = app.screen.width / 2;
+    model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
 
-    console.log('Haru model loaded successfully!');
+    console.log("✅ Model loaded!");
 
-    // Optional: make model follow mouse
-    window.addEventListener('mousemove', (e) => {
-      const dx = e.clientX - app.renderer.width / 2;
-      const dy = e.clientY - app.renderer.height / 2;
-      model.rotation = dx * 0.0005; // slight rotation based on mouse X
-      model.y = app.renderer.height / 2 + dy * 0.05; // slight vertical movement
+    //
+    // Optional: make model slightly interactive (follow mouse)
+    //
+    window.addEventListener("mousemove", (e) => {
+      const dx = e.clientX - app.screen.width / 2;
+      const dy = e.clientY - app.screen.height / 2;
+      model.rotation = dx * 0.0005;
+      model.y = app.screen.height / 2 + dy * 0.05;
     });
 
-  } catch (err) {
-    console.error('Failed to load Haru model:', err);
+  } catch (e) {
+    console.error("❌ MODEL LOAD ERROR:", e);
   }
-
 })();
