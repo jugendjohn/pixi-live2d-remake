@@ -1,3 +1,6 @@
+import * as PIXI from 'pixi.js';
+import { Live2DModel } from 'pixi-live2d-display';
+
 (async () => {
   //
   // 1. PIXI check
