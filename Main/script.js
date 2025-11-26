@@ -32,7 +32,7 @@
   // 4. Load MODEL3 JSON
   //
   const MODEL_PATH =
-    "../Samples/Resources/Haru/haru.model3.json";
+    "Samples/Resources/Haru/haru.model3.json";
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
