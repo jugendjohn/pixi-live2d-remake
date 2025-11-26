@@ -72,4 +72,5 @@
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
+  }
 })();
