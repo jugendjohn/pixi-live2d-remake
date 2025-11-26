@@ -1,10 +1,11 @@
 (async () => {
-
+  // Check PIXI
   if (typeof PIXI === "undefined") {
     console.error("❌ PIXI NOT LOADED");
     return;
   }
 
+  // Check Live2D plugin
   if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
     console.error("❌ pixi-live2d-display NOT LOADED");
     return;
@@ -12,27 +13,16 @@
 
   const { Live2DModel } = PIXI.live2d;
 
-  // Create app (NO resizeTo)
+  // Create PIXI app
   const app = new PIXI.Application({
     background: "#141b21",
-    width: window.innerWidth,
-    height: window.innerHeight,
+    resizeTo: window,
     antialias: true
   });
 
   document.body.appendChild(app.view);
 
-  // Never let ticker sleep
-  app.ticker.autoStart = true;
-  app.ticker.start();
-  app.ticker.maxFPS = 60;
-  app.ticker.minFPS = 60;
-
-  // Resize handler
-  window.addEventListener("resize", () => {
-    app.renderer.resize(window.innerWidth, window.innerHeight);
-  });
-
+  // Model path
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
 
   try {
@@ -40,31 +30,24 @@
 
     model.anchor.set(0.5);
 
+    // Scale according to screen height
     const scaleFactor = (app.screen.height / model.height) * 0.9;
     model.scale.set(scaleFactor);
 
-    model.x = app.screen.width * 0.4;
+    // Offset left
+    model.x = app.screen.width * 0.40;
     model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
 
-    model.internalModel.settings.eyeBlink = true;
+    console.log("✅ Model loaded!");
 
-    if (model.motions && model.motions.Idle) {
-      const idleKeys = Object.keys(model.motions.Idle);
-      const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
-      model.motion("Idle", randomKey);
-    }
-
-    // CORRECT UPDATE FUNCTION
-    app.ticker.add((delta) => {
-      model.update(delta);
+    // Let PIXI handle frame updates automatically — NO manual update needed
+    app.ticker.add(() => {
+      // THIS EMPTY TICKER ENSURES PIXI RUNS — DO NOT REMOVE
     });
-
-    console.log("✅ Model loaded, updating properly!");
 
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
-
 })();
