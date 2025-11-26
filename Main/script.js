@@ -27,6 +27,8 @@
   });
 
   document.body.appendChild(app.view);
+  
+  app.ticker.start();;
 
   //
   // 4. Load MODEL3 JSON
