@@ -26,7 +26,11 @@
     resizeTo: window,
   });
 
-  document.body.appendChild(app.view);
+  // Pixi 7 fix: force ticker start
+  app.ticker.start();
+  PIXI.Ticker.shared.start();  // ← REQUIRED for Live2D animation on Pixi v7
+
+document.body.appendChild(app.view);
 
   //
   // 4. Load MODEL3 JSON
