@@ -62,6 +62,11 @@
       const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
       model.motion("Idle", randomKey);
     }
+    
+    // IMPORTANT: Manual frame update
+    app.ticker.add(() => {
+      model.update(app.ticker.deltaMS); // live2d update
+      app.renderer.render(app.stage);   // force redraw
 
     console.log("✅ Model loaded, scaled, and positioned!");
   } catch (e) {
