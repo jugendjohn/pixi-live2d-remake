@@ -40,8 +40,8 @@
     // Center and scale model
     model.anchor.set(0.5);
     model.scale.set(0.5);
-    model.x = app.screen.width / 2;
-    model.y = app.screen.height / 2;
+    model.x = app.screen.width / 4;
+    model.y = app.screen.height / 4;
 
     app.stage.addChild(model);
 
