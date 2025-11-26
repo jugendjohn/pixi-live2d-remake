@@ -37,15 +37,31 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
-    // Center and scale model
+    // Anchor at center (for scaling and positioning)
     model.anchor.set(0.5);
-    model.scale.set(0.5);
-    model.x = app.screen.width / 4;
-    model.y = app.screen.height / 4;
+
+    // Scale model to fit the height of the screen (adjust as needed)
+    const scaleFactor = app.screen.height / model.height * 0.9; // 90% of screen height
+    model.scale.set(scaleFactor);
+
+    // Offset to the left (20% from the left edge)
+    model.x = app.screen.width * 0.25; 
+    // Vertically center
+    model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
 
-    console.log("✅ Model loaded!");
+    // Enable blinking
+    model.internalModel.settings.eyeBlink = true;
+
+    // Play idle motion if available
+    if (model.motions && model.motions.Idle) {
+      const idleKeys = Object.keys(model.motions.Idle);
+      const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
+      model.motion("Idle", randomKey);
+    }
+
+    console.log("✅ Model loaded, scaled, and positioned!");
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
