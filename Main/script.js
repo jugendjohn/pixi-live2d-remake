@@ -32,7 +32,7 @@
   // 4. Load MODEL3 JSON
   //
   const MODEL_PATH =
-    "pixi-live2d-remake/Samples/Resources/Haru/haru.model3.json";
+    "Samples/Resources/Haru/haru.model3.json";
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
@@ -46,17 +46,6 @@
     app.stage.addChild(model);
 
     console.log("✅ Model loaded!");
-
-    //
-    // Optional: make model slightly interactive (follow mouse)
-    //
-    window.addEventListener("mousemove", (e) => {
-      const dx = e.clientX - app.screen.width / 2;
-      const dy = e.clientY - app.screen.height / 2;
-      model.rotation = dx * 0.0005;
-      model.y = app.screen.height / 2 + dy * 0.05;
-    });
-
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
