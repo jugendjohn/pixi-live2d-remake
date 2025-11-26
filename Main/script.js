@@ -22,7 +22,7 @@
   // 3. Create PIXI app
   //
   const app = new PIXI.Application({
-    background: "#1099bb",
+    background: "#3c3b4c",
     resizeTo: window,
   });
 
