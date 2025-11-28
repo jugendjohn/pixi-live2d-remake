@@ -47,7 +47,7 @@
       model.anchor.set(0.5);
 
       // Scale model to fit ~90% of screen height
-      const scaleFactor = (app.screen.height / model.height) * 0.9;
+      const scaleFactor = app.screen.height / model.height * 0.9;
       model.scale.set(scaleFactor);
 
       // Position model: slightly left, vertically centered
