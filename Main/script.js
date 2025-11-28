@@ -61,8 +61,23 @@
       console.log("✅ Model fully loaded + positioned + animated");
     });
 
-    // Safety: update every frame
-    app.ticker.add(() => {
+    //
+    // 🔥 REAL FIX: manually drive Live2D update every frame
+    //
+    app.ticker.add((delta) => {
+
+      // update Live2D animation system
+      model.internalModel.update(delta / 60);
+
+      // update motion manager
+      model.internalModel.motionManager.update(delta / 60);
+
+      // update physics if available
+      if (model.internalModel.physics) {
+        model.internalModel.physics.update(delta / 60);
+      }
+
+      // render stage
       app.renderer.render(app.stage);
     });
 
