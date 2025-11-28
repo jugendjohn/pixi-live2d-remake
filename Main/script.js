@@ -1,53 +1,80 @@
 (async () => {
-  // Create PIXI app
-  const app = new PIXI.Application({
-    view: document.getElementById("canvas"),
-    autoStart: true,
-    resizeTo: window,                // Auto-resize the canvas
-    backgroundColor: "#141b21",
-    antialias: true,
-    powerPreference: "high-performance"
-  });
 
-  // Force update every frame
-  app.ticker.maxFPS = 60;
-  app.ticker.minFPS = 30;
-
-  // Ensure Live2D plugin is available
-  const { Live2DModel } = PIXI.live2d;
-
-  // Load model
-  const model = await Live2DModel.from("Samples/Resources/Haru/Haru.model3.json");
-
-  app.stage.addChild(model);
-
-  // -----------------------------------------------------
-  //  FULL BODY LEFT-SIDE PLACEMENT
-  // -----------------------------------------------------
-
-  function positionModel() {
-    const scale = window.innerHeight / model.height * 0.9;   // full-body scaling
-
-    model.scale.set(scale);
-
-    model.anchor.set(0.5, 1);    // centered horizontally, bottom aligned
-    model.x = window.innerWidth * 0.28;  // left side offset
-    model.y = window.innerHeight * 1.02; // just slightly below bottom to show full legs
+  //
+  // 1. PIXI check
+  //
+  if (typeof PIXI === "undefined") {
+    console.error("❌ PIXI NOT LOADED");
+    return;
   }
 
-  positionModel();
+  //
+  // 2. Live2D plugin check
+  //
+  if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
+    console.error("❌ pixi-live2d-display NOT LOADED");
+    return;
+  }
 
-  // Reposition on window resize
-  window.addEventListener("resize", () => {
-    positionModel();
-    app.renderer.resize(window.innerWidth, window.innerHeight);
+  // Import the model constructor
+  const { Live2DModel } = PIXI.live2d;
+
+  //
+  // 3. Create PIXI app
+  //
+  const app = new PIXI.Application({
+    background: "#1099bb",
+    resizeTo: window,
+    autoStart: true,   // ← FIX #1 (ensures ticker always runs)
   });
 
-  // -----------------------------------------------------
-  //  FIX: FORCE RENDER EVERY FRAME TO PREVENT "STUCK FRAME"
-  // -----------------------------------------------------
-  app.ticker.add(() => {
-    app.renderer.render(app.stage);
-  });
+  document.body.appendChild(app.view);
+
+  //
+  // 4. Load MODEL3 JSON
+  //
+  const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
+
+  try {
+    const model = await Live2DModel.from(MODEL_PATH);
+
+    // Anchor at center
+    model.anchor.set(0.5);
+
+    // Scale model to fit height of screen (same as your code)
+    const scaleFactor = app.screen.height / model.height * 0.9;
+    model.scale.set(scaleFactor);
+
+    // Offset left (your original values)
+    model.x = app.screen.width * 0.25;
+    model.x = app.screen.width * 0.4;
+
+    // Vertically center
+    model.y = app.screen.height / 2;
+
+    app.stage.addChild(model);
+
+    // Enable blinking
+    model.internalModel.settings.eyeBlink = true;
+
+    // Play idle motion if available
+    if (model.motions && model.motions.Idle) {
+      const idleKeys = Object.keys(model.motions.Idle);
+      const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
+      model.motion("Idle", randomKey);
+    }
+
+    console.log("✅ Model loaded, scaled, and positioned!");
+
+    //
+    // FIX #2 — force redraw every frame (prevents stuck-on-first-frame issue)
+    //
+    app.ticker.add(() => {
+      app.renderer.render(app.stage);
+    });
+
+  } catch (e) {
+    console.error("❌ MODEL LOAD ERROR:", e);
+  }
 
 })();
