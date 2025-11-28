@@ -28,24 +28,21 @@
     Application.registerPlugin(TickerPlugin);
     Live2DModel.registerTicker(Ticker);
 
-    // Add to stage immediately (safe)
+    // Anchor at center
+    model.anchor.set(0.2);
+
+    // Scale model to fit height of screen (same as your code)
+    const scaleFactor = app.screen.height / model.height * 0.9;
+    model.scale.set(scaleFactor);
+
+    // Offset left (your original values)
+    model.x = app.screen.width * 0.25;
+    model.x = app.screen.width * 0.4;
+
+    // Vertically center
+    model.y = app.screen.height / 2;
+
     app.stage.addChild(model);
-
-    //
-    // REAL FIX: only run placement AFTER full model load
-    //
-    model.on("modelLoaded", () => {
-      
-      // Center anchor
-      model.anchor.set(0.1);
-
-      // Proper scale (NOW correct, since model.width/height exist)
-      const scaleFactor = (app.screen.height / model.height) * 0.1;
-      model.scale.set(scaleFactor);
-
-      // Left offset (40% from left)
-      model.x = app.screen.width * 0.1;
-      model.y = app.screen.height / 4;
 
     // Enable blinking
     model.internalModel.settings.eyeBlink = true;
