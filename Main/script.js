@@ -48,6 +48,7 @@
     model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
+      console.log("✅ Model loaded, scaled, and positioned!");
     
     // Enable blinking
     model.internalModel.settings.eyeBlink = true;
@@ -58,8 +59,35 @@
       const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
       model.motion("Idle", randomKey);
     }
+    
+     // 5️⃣ Cursor tracking: make model look at cursor
+    window.addEventListener('mousemove', (e) => {
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
 
-    console.log("✅ Model loaded, scaled, and positioned!");
+      // Convert mouse position to normalized [-1, 1] for parameter
+      const dx = (mouseX - model.x) / app.screen.width;
+      const dy = (mouseY - model.y) / app.screen.height;
+
+      // Set model parameters (these names may vary per model)
+      if (model.internalModel) {
+        model.internalModel.setParameterValueById('ParamAngleX', dx * 30); // rotate head left/right
+        model.internalModel.setParameterValueById('ParamAngleY', dy * 20); // rotate head up/down
+        model.internalModel.setParameterValueById('ParamEyeBallX', dx);   // move eyes
+        model.internalModel.setParameterValueById('ParamEyeBallY', dy);
+      }
+    });
+
+    // 6️⃣ Hit interactions: trigger idle motion on click
+    model.interactive = true;
+    model.cursor = "pointer";
+    model.on('pointerdown', () => {
+      if (model.motions?.Idle) {
+        const idleKeys = Object.keys(model.motions.Idle);
+        const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
+        model.motion("Idle", randomKey);
+      }
+    });
 
     // Create a new ticker instance
     const ticker = new PIXI.Ticker();
