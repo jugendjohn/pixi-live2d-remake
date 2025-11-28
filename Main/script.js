@@ -25,7 +25,7 @@
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
-    Application.registerPlugin(TickerPlugin);
+    app.registerPlugin(TickerPlugin);
     Live2DModel.registerTicker(Ticker);
 
     // Anchor at center
