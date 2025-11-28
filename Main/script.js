@@ -38,12 +38,12 @@
       model.anchor.set(0.1);
 
       // Proper scale (NOW correct, since model.width/height exist)
-      const scaleFactor = (app.screen.height / model.height) * 0.2;
+      const scaleFactor = (app.screen.height / model.height) * 0.1;
       model.scale.set(scaleFactor);
 
-      // Left offset
+      // Left offset (40% from left)
       model.x = app.screen.width * 0.1;
-      model.y = app.screen.height * 0.1;
+      model.y = app.screen.height / 4;
 
       // Enable blinking
       model.internalModel.settings.eyeBlink = true;
@@ -61,23 +61,8 @@
       console.log("✅ Model fully loaded + positioned + animated");
     });
 
-    //
-    // 🔥 REAL FIX: manually drive Live2D update every frame
-    //
-    app.ticker.add((delta) => {
-
-      // update Live2D animation system
-      model.internalModel.update(delta / 60);
-
-      // update motion manager
-      model.internalModel.motionManager.update(delta / 60);
-
-      // update physics if available
-      if (model.internalModel.physics) {
-        model.internalModel.physics.update(delta / 60);
-      }
-
-      // render stage
+    // Safety: update every frame
+    app.ticker.add(() => {
       app.renderer.render(app.stage);
     });
 
