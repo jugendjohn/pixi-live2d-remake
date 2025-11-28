@@ -37,9 +37,11 @@
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
-    const ticker = PIXI.Ticker;
-    ticker.add(() => model.update(ticker.elapsedMS));
-
+    // Register the TickerPlugin for PIXI.Application
+    PIXI.Application.registerPlugin(PIXI.TickerPlugin);
+    // Register the shared ticker for Live2D models
+    PIXI.live2d.Live2DModel.registerTicker(PIXI.Ticker.shared);
+    
     // Anchor at center
     model.anchor.set(0.5);
 
