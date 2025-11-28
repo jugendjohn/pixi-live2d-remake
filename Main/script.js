@@ -30,28 +30,47 @@
   document.body.appendChild(app.view);
 
   //
-  // 4. Load MODEL3 JSON
+  // 4. Ensure tickers are running (required for Live2D animation)
+  //
+  app.ticker.start();
+  PIXI.Ticker.shared.start();
+
+  // Optional: force redraw each frame (extra safety for UMD builds)
+  app.ticker.add(() => {
+    app.renderer.render(app.stage);
+  });
+
+  //
+  // 5. Load MODEL3 JSON
   //
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
+
+    // Add model to stage immediately
+    app.stage.addChild(model);
+
     // Wait until all textures are fully loaded
     model.once('loaded', () => {
-       // Anchor at center
+
+      // Anchor at center
       model.anchor.set(0.5);
 
-      // Scale model to fit ~90% of screen height
-      const scaleFactor = app.screen.height / model.height * 0.9;
-      model.scale.set(scaleFactor);
+      // Function to scale and position model
+      const resizeModel = () => {
+        const scaleFactor = (app.screen.height / model.height) * 0.9;
+        model.scale.set(scaleFactor);
+        model.x = app.screen.width * 0.4; // slightly left
+        model.y = app.screen.height / 2;  // vertically centered
+      };
 
-      // Position model: slightly left
-      model.x = app.screen.width * 0.3;
-      model.y = app.screen.height / 2;
+      // Initial positioning
+      resizeModel();
 
-      // Add model to stage immediately
-      app.stage.addChild(model);
-      
+      // Update position/scale on window resize
+      window.addEventListener('resize', resizeModel);
+
       // Enable eye blinking
       model.internalModel.settings.eyeBlink = true;
 
@@ -62,23 +81,15 @@
         model.motion("Idle", randomKey);
       }
 
-      // Force initial render to prevent first-frame stuck issue
-      app.renderer.render(app.stage);
-    });
-
-    // Ensure the tickers are running (required for Live2D animation)
-    app.ticker.start();
-    PIXI.Ticker.shared.start();
-
-    // Optional: force redraw each frame (extra safety for UMD builds)
-    app.ticker.add(() => {
+      // Force initial render
       app.renderer.render(app.stage);
     });
 
     console.log("✅ Model loaded, scaled, and positioned!");
-
+    
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
 
 })();
+
