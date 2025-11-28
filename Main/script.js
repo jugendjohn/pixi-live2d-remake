@@ -37,6 +37,8 @@
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
+    import * as PIXI from 'pixi.js';
+    window.PIXI = PIXI;
 
     // Anchor at center
     model.anchor.set(0.5);
