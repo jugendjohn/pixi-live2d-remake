@@ -38,17 +38,17 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
-    app.stage.addChild(model);
-    
     // Anchor at center
     model.anchor.set(0.5);
 
     // Scale model to fit height of screen (same as your code)
     const scaleFactor = app.screen.height / model.height * 0.9;
     model.scale.set(scaleFactor);
-    model.x = app.screen.width * 0.25;
+    model.x = app.screen.width * 0.4;
     model.y = app.screen.height / 2;
 
+    app.stage.addChild(model);
+    
     // Enable blinking
     model.internalModel.settings.eyeBlink = true;
 
