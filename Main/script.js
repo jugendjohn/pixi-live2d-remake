@@ -4,7 +4,7 @@
     view: document.getElementById("canvas"),
     autoStart: true,
     resizeTo: window,                // Auto-resize the canvas
-    backgroundColor: 0x141b21,
+    backgroundColor: "#141b21",
     antialias: true,
     powerPreference: "high-performance"
   });
@@ -17,7 +17,7 @@
   const { Live2DModel } = PIXI.live2d;
 
   // Load model
-  const model = await Live2DModel.from("./haru_greeter_t03.model3.json");
+  const model = await Live2DModel.from("Samples/Resources/Haru/Haru.model3.json");
 
   app.stage.addChild(model);
 
