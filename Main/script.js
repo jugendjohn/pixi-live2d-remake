@@ -25,6 +25,8 @@
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
+    Application.registerPlugin(TickerPlugin);
+    Live2DModel.registerTicker(Ticker);
 
     // Add to stage immediately (safe)
     app.stage.addChild(model);
@@ -45,23 +47,21 @@
       model.x = app.screen.width * 0.1;
       model.y = app.screen.height / 4;
 
-      // Enable blinking
-      model.internalModel.settings.eyeBlink = true;
+    // Enable blinking
+    model.internalModel.settings.eyeBlink = true;
 
-      // Idle motion
-      if (model.motions && model.motions.Idle) {
-        const idleKeys = Object.keys(model.motions.Idle);
-        const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
-        model.motion("Idle", randomKey);
-      }
+    // Play idle motion if available
+    if (model.motions && model.motions.Idle) {
+      const idleKeys = Object.keys(model.motions.Idle);
+      const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
+      model.motion("Idle", randomKey);
+    }
 
-      // Force full first render
-      app.renderer.render(app.stage);
+    console.log("✅ Model loaded, scaled, and positioned!");
 
-      console.log("✅ Model fully loaded + positioned + animated");
-    });
-
-    // Safety: update every frame
+    //
+    // FIX #2 — force redraw every frame (prevents stuck-on-first-frame issue)
+    //
     app.ticker.add(() => {
       app.renderer.render(app.stage);
     });
