@@ -61,14 +61,19 @@
 
     console.log("✅ Model loaded, scaled, and positioned!");
 
-    //
-    // FIX #2 — force redraw every frame (prevents stuck-on-first-frame issue)
-    //
-    const ticker = new PIXI.Ticker;
-    app.ticker.add(() => {
+    // Create a new ticker instance
+    const ticker = new PIXI.Ticker();
+    // Add a callback to render the stage and update the model
+    ticker.add((delta) => {
+      // Render the stage
       app.renderer.render(app.stage);
-      model.update(ticker);
+      // Update the model manually (optional if you want fine control)
+      if (model && model.internalModel) {
+        model.update(delta); // pass delta time
+      }
     });
+    // Start the ticker
+    ticker.start();
 
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
