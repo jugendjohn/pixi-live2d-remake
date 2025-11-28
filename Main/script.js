@@ -43,8 +43,8 @@
     const scaleFactor = app.screen.height / model.height * 0.9;
     model.scale.set(scaleFactor);
 
-    // Position model: slightly left, vertically centered
-    model.x = app.screen.width * 0.4;
+    // Position model: slightly left
+    model.x = app.screen.width * 0.2;
     model.y = app.screen.height / 2;
 
     // Add model to stage immediately
