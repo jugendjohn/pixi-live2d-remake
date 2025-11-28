@@ -26,7 +26,7 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
     app.registerPlugin(TickerPlugin);
-    Live2DModel.registerTicker(Ticker);
+    model.registerTicker(Ticker);
 
     // Anchor at center
     model.anchor.set(0.2);
@@ -56,11 +56,6 @@
 
     console.log("✅ Model loaded, scaled, and positioned!");
 
-    //
-    // FIX #2 — force redraw every frame (prevents stuck-on-first-frame issue)
-    //
-    app.ticker.add(() => {
-      app.renderer.render(app.stage);
     });
 
   } catch (e) {
