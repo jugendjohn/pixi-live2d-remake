@@ -37,7 +37,8 @@
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
-    window.PIXI = PIXI;
+    const ticker = new Ticker();
+    ticker.add(() => model.update(ticker.elapsedMS));
 
     // Anchor at center
     model.anchor.set(0.5);
