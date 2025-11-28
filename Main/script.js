@@ -38,7 +38,7 @@
       model.anchor.set(0.5);
 
       // Proper scale (NOW correct, since model.width/height exist)
-      const scaleFactor = (app.screen.height / model.height) * 0.9;
+      const scaleFactor = (app.screen.height / model.height) * 0.2;
       model.scale.set(scaleFactor);
 
       // Left offset (40% from left)
