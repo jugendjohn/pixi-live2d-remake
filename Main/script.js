@@ -15,17 +15,18 @@
     return;
   }
 
+  // Import the model constructor
   const { Live2DModel } = PIXI.live2d;
 
   //
   // 3. Create PIXI app
   //
   const app = new PIXI.Application({
-    background: "#141b21",   // your page background color
-    resizeTo: window,        // auto-resize on window change
+    background: "#141b21",
+    resizeTo: window,
   });
 
-  // REQUIRED for Pixi 7 (fixes animations freezing)
+  // Pixi 7 fix — **required for animation**
   app.ticker.start();
   PIXI.Ticker.shared.start();
 
@@ -39,65 +40,47 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
-    //
-    // 5. When model fully loads
-    //
+    // Wait until fully loaded
     model.once("loaded", () => {
-
       //
-      // --- Anchor for full-body placement ---
+      // 🔹 SCALE + POSITION FIX (FULL BODY LEFT)
       //
       model.anchor.set(0.5, 1.0);  // center X, bottom Y
 
-      //
-      // --- SCALE so full body fits screen ---
-      //
-      const targetHeight = app.screen.height * 0.95; // show 95% of height
+      // compute full original height for accurate scaling
+      const fullHeight = model.internalModel.originalHeight || model.height;
 
-      // Cubism correct model height
-      const actualHeight =
-        model.internalModel.originalHeight || model.height;
-
-      const scaleFactor = targetHeight / actualHeight;
+      // scale so full body fits on screen
+      const scaleFactor = (app.screen.height * 0.55) / fullHeight;
       model.scale.set(scaleFactor);
 
-      //
-      // --- POSITION model left side ---
-      //
-      model.x = app.screen.width * 0.28; // adjust left/right here
-      model.y = app.screen.height;       // align feet to bottom
+      // position: left side, feet touching bottom
+      model.x = app.screen.width * 0.22;
+      model.y = app.screen.height;
 
       //
-      // --- Eye blink on ---
+      // END FIX
       //
-      if (model.internalModel?.settings) {
-        model.internalModel.settings.eyeBlink = true;
-      }
 
-      //
-      // --- Idle motion ---
-      //
+      // Enable blinking
+      model.internalModel.settings.eyeBlink = true;
+
+      // Play idle motion
       if (model.motions && model.motions.Idle) {
         const idleKeys = Object.keys(model.motions.Idle);
-        if (idleKeys.length > 0) {
-          model.motion("Idle", idleKeys[0]);
-        }
+        const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
+        model.motion("Idle", randomKey);
       }
 
-      //
-      // Force first render (fixes blank-on-load)
-      //
+      // Force first render
       app.renderer.render(app.stage);
     });
 
-    //
-    // 6. Add model to stage
-    //
+    // Add model to stage
     app.stage.addChild(model);
 
-    console.log("✅ Model loaded, scaled, and positioned!");
+    console.log("✅ Model loaded, scaled, positioned correctly!");
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
 })();
-
