@@ -37,10 +37,16 @@
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
-    // Register the TickerPlugin for PIXI.Application
-    PIXI.Application.registerPlugin(PIXI.TickerPlugin);
-    // Register the shared ticker for Live2D models
-    PIXI.live2d.Live2DModel.registerTicker(PIXI.Ticker.shared);
+
+    // 1. Ensure ticker is running
+    app.ticker.start();
+    PIXI.Ticker.shared.start(); // required for Live2D animation
+    // 2. After loading the model
+    const model = await PIXI.live2d.Live2DModel.from(MODEL_PATH);
+    // 3. Register the shared ticker **on the instance**
+    model.registerTicker(PIXI.Ticker.shared);
+    // 4. Add to stage
+    app.stage.addChild(model);    
     
     // Anchor at center
     model.anchor.set(0.5);
