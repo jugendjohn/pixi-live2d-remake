@@ -41,8 +41,6 @@
     // Ensure ticker is running
     app.ticker.start();
     PIXI.Ticker.shared.start(); // required for Live2D animation
-    // Register the shared ticker **on the instance**
-    model.registerTicker(PIXI.Ticker.shared);
     app.stage.addChild(model);    
     
     // Anchor at center
