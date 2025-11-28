@@ -46,8 +46,7 @@
     model.scale.set(scaleFactor);
 
     // Offset left (your original values)
-    model.x = app.screen.width * 0.25;
-    model.x = app.screen.width * 0.4;
+    model.x = app.screen.width * 0.3;
 
     // Vertically center
     model.y = app.screen.height / 2;
