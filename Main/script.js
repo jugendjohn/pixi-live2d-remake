@@ -36,24 +36,23 @@
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
+    // Anchor at center
+    model.anchor.set(0.5);
+
+    // Scale model to fit ~90% of screen height
+    const scaleFactor = app.screen.height / model.height * 0.9;
+    model.scale.set(scaleFactor);
+
+    // Position model: slightly left, vertically centered
+    model.x = app.screen.width * 0.4;
+    model.y = app.screen.height / 2;
 
     // Add model to stage immediately
     app.stage.addChild(model);
 
     // Wait until all textures are fully loaded
     model.once('loaded', () => {
-
-      // Anchor at center
-      model.anchor.set(0.5);
-
-      // Scale model to fit ~90% of screen height
-      const scaleFactor = app.screen.height / model.height * 0.9;
-      model.scale.set(scaleFactor);
-
-      // Position model: slightly left, vertically centered
-      model.x = app.screen.width * 0.4;
-      model.y = app.screen.height / 2;
-
+      
       // Enable eye blinking
       model.internalModel.settings.eyeBlink = true;
 
