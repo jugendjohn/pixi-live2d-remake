@@ -1,81 +1,53 @@
 (async () => {
-  //
-  // PIXI checks
-  //
-  if (typeof PIXI === "undefined") {
-    console.error("❌ PIXI NOT LOADED");
-    return;
-  }
-  if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
-    console.error("❌ pixi-live2d-display NOT LOADED");
-    return;
-  }
-
-  const { Live2DModel } = PIXI.live2d;
-
-  //
-  // 3. Create PIXI app
-  //
+  // Create PIXI app
   const app = new PIXI.Application({
-    background: "#141b21",
-    resizeTo: window,
+    view: document.getElementById("canvas"),
+    autoStart: true,
+    resizeTo: window,                // Auto-resize the canvas
+    backgroundColor: 0x141b21,
     antialias: true,
+    powerPreference: "high-performance"
   });
 
-  // Pixi 7 fix — required for Live2D motion updates
-  app.ticker.start();
-  PIXI.Ticker.shared.start();
+  // Force update every frame
+  app.ticker.maxFPS = 60;
+  app.ticker.minFPS = 30;
 
-  document.body.appendChild(app.view);
+  // Ensure Live2D plugin is available
+  const { Live2DModel } = PIXI.live2d;
 
-  // 🔥 FIX FOR NOT SHOWING UNTIL ZOOM — force correct canvas size
-  app.renderer.resize(window.innerWidth, window.innerHeight);
-  requestAnimationFrame(() => {
+  // Load model
+  const model = await Live2DModel.from("./haru_greeter_t03.model3.json");
+
+  app.stage.addChild(model);
+
+  // -----------------------------------------------------
+  //  FULL BODY LEFT-SIDE PLACEMENT
+  // -----------------------------------------------------
+
+  function positionModel() {
+    const scale = window.innerHeight / model.height * 0.9;   // full-body scaling
+
+    model.scale.set(scale);
+
+    model.anchor.set(0.5, 1);    // centered horizontally, bottom aligned
+    model.x = window.innerWidth * 0.28;  // left side offset
+    model.y = window.innerHeight * 1.02; // just slightly below bottom to show full legs
+  }
+
+  positionModel();
+
+  // Reposition on window resize
+  window.addEventListener("resize", () => {
+    positionModel();
     app.renderer.resize(window.innerWidth, window.innerHeight);
   });
 
-  //
-  // Load model
-  //
-  const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
+  // -----------------------------------------------------
+  //  FIX: FORCE RENDER EVERY FRAME TO PREVENT "STUCK FRAME"
+  // -----------------------------------------------------
+  app.ticker.add(() => {
+    app.renderer.render(app.stage);
+  });
 
-  try {
-    const model = await Live2DModel.from(MODEL_PATH);
-
-    model.once("loaded", () => {
-      //
-      // Scale and placement (left-side full body)
-      //
-      model.anchor.set(0.5, 1.0); // middle-bottom
-
-      const fullHeight =
-        model.internalModel.originalHeight || model.height;
-
-      const scaleFactor =
-        (app.screen.height * 0.55) / fullHeight;
-
-      model.scale.set(scaleFactor);
-
-      model.x = app.screen.width * 0.22;
-      model.y = app.screen.height;
-
-      model.internalModel.settings.eyeBlink = true;
-
-      if (model.motions && model.motions.Idle) {
-        const idleKeys = Object.keys(model.motions.Idle);
-        const randomKey =
-          idleKeys[Math.floor(Math.random() * idleKeys.length)];
-        model.motion("Idle", randomKey);
-      }
-
-      // Force initial draw
-      app.renderer.render(app.stage);
-    });
-
-    app.stage.addChild(model);
-
-    console.log("✅ Model loaded successfully!");
-  } catch (e) {
-    console.error("❌ MODEL LOAD ERROR:", e);
-  }
 })();
