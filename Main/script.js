@@ -46,11 +46,7 @@
     // Scale model to fit height of screen (same as your code)
     const scaleFactor = app.screen.height / model.height * 0.9;
     model.scale.set(scaleFactor);
-
-    // Offset left (your original values)
     model.x = app.screen.width * 0.25;
-
-    // Vertically center
     model.y = app.screen.height / 2;
 
     // Enable blinking
