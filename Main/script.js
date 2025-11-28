@@ -41,9 +41,9 @@
       const scaleFactor = (app.screen.height / model.height) * 0.2;
       model.scale.set(scaleFactor);
 
-      // Left offset (40% from left)
-      model.x = app.screen.width * 0.4;
-      model.y = app.screen.height / 2;
+      // Left offset
+      model.x = app.screen.width * 0.1;
+      model.y = app.screen.height * 0.1;
 
       // Enable blinking
       model.internalModel.settings.eyeBlink = true;
