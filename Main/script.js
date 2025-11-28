@@ -64,9 +64,10 @@
     //
     // FIX #2 — force redraw every frame (prevents stuck-on-first-frame issue)
     //
+    const ticker = new PIXI.Ticker;
     app.ticker.add(() => {
       app.renderer.render(app.stage);
-      model.update();
+      model.update(ticker);
     });
 
   } catch (e) {
