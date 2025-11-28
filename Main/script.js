@@ -66,6 +66,7 @@
     //
     app.ticker.add(() => {
       app.renderer.render(app.stage);
+      model.update()
     });
 
   } catch (e) {
