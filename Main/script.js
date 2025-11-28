@@ -35,7 +35,7 @@
     model.on("modelLoaded", () => {
       
       // Center anchor
-      model.anchor.set(0.5);
+      model.anchor.set(0.1);
 
       // Proper scale (NOW correct, since model.width/height exist)
       const scaleFactor = (app.screen.height / model.height) * 0.2;
