@@ -21,11 +21,11 @@
   // 3. Create PIXI app
   //
   const app = new PIXI.Application({
-    background: "#1099bb",
-    resizeTo: window, // auto-resize
+    background: "#141b21",   // your page background color
+    resizeTo: window,        // auto-resize on window change
   });
 
-  // Pixi 7 fix: start ticker
+  // REQUIRED for Pixi 7 (fixes animations freezing)
   app.ticker.start();
   PIXI.Ticker.shared.start();
 
@@ -39,39 +39,65 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
+    //
+    // 5. When model fully loads
+    //
     model.once("loaded", () => {
-      model.anchor.set(0.5);
 
-      const scaleFactor = (app.screen.height / model.height) * 0.9;
+      //
+      // --- Anchor for full-body placement ---
+      //
+      model.anchor.set(0.5, 1.0);  // center X, bottom Y
+
+      //
+      // --- SCALE so full body fits screen ---
+      //
+      const targetHeight = app.screen.height * 0.95; // show 95% of height
+
+      // Cubism correct model height
+      const actualHeight =
+        model.internalModel.originalHeight || model.height;
+
+      const scaleFactor = targetHeight / actualHeight;
       model.scale.set(scaleFactor);
 
-      model.x = app.screen.width * 0.4;
-      model.y = app.screen.height / 2;
+      //
+      // --- POSITION model left side ---
+      //
+      model.x = app.screen.width * 0.28; // adjust left/right here
+      model.y = app.screen.height;       // align feet to bottom
 
-      model.internalModel.settings.eyeBlink = true;
-
-      if (model.motions && model.motions.Idle) {
-        const idleKeys = Object.keys(model.motions.Idle);
-        const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
-        model.motion("Idle", randomKey);
+      //
+      // --- Eye blink on ---
+      //
+      if (model.internalModel?.settings) {
+        model.internalModel.settings.eyeBlink = true;
       }
 
-      // Initial draw
+      //
+      // --- Idle motion ---
+      //
+      if (model.motions && model.motions.Idle) {
+        const idleKeys = Object.keys(model.motions.Idle);
+        if (idleKeys.length > 0) {
+          model.motion("Idle", idleKeys[0]);
+        }
+      }
+
+      //
+      // Force first render (fixes blank-on-load)
+      //
       app.renderer.render(app.stage);
     });
 
-    // Add model
+    //
+    // 6. Add model to stage
+    //
     app.stage.addChild(model);
 
-    //
-    // 🔥 IMPORTANT: Manual update loop (Pixi v7 requirement)
-    //
-    app.ticker.add((delta) => {
-      model.update(delta);   // <– REQUIRED so Live2D actually animates
-    });
-
-    console.log("✅ Model fully initialized");
+    console.log("✅ Model loaded, scaled, and positioned!");
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
 })();
+
