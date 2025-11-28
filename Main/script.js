@@ -39,7 +39,7 @@
     const model = await Live2DModel.from(MODEL_PATH);
 
     // Anchor at center
-    model.anchor.set(0);
+    model.anchor.set(0.5);
 
     // Scale model to fit height of screen (same as your code)
     const scaleFactor = app.screen.height / model.height * 0.9;
