@@ -38,6 +38,8 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
+    app.stage.addChild(model);
+    
     // Anchor at center
     model.anchor.set(0.5);
 
@@ -46,12 +48,10 @@
     model.scale.set(scaleFactor);
 
     // Offset left (your original values)
-    model.x = app.screen.width * 0.3;
+    model.x = app.screen.width * 0.25;
 
     // Vertically center
     model.y = app.screen.height / 2;
-
-    app.stage.addChild(model);
 
     // Enable blinking
     model.internalModel.settings.eyeBlink = true;
