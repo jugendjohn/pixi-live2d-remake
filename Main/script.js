@@ -1,12 +1,12 @@
 (async () => {
 
-  // 1. PIXI check
+  // 1️⃣ PIXI check
   if (typeof PIXI === "undefined") {
     console.error("❌ PIXI NOT LOADED");
     return;
   }
 
-  // 2. Live2D plugin check
+  // 2️⃣ Live2D plugin check
   if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
     console.error("❌ pixi-live2d-display NOT LOADED");
     return;
@@ -14,7 +14,7 @@
 
   const { Live2DModel } = PIXI.live2d;
 
-  // 3. Create PIXI app
+  // 3️⃣ Create PIXI app
   const app = new PIXI.Application({
     background: "#1099bb",
     resizeTo: window,
@@ -23,7 +23,7 @@
 
   document.body.appendChild(app.view);
 
-  // 4. Load MODEL3 JSON
+  // 4️⃣ Load MODEL3 JSON
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
 
   try {
@@ -69,12 +69,13 @@
     });
 
     // ============================================================
-    // 6️⃣ Hit interaction (click → play idle)
+    // 6️⃣ Hit interactions (Pixi v7 eventMode)
     // ============================================================
-    app.stage.interactive = true;
+    app.stage.eventMode = "static"; // replaces interactive=true
+
     app.stage.on("pointerdown", (e) => {
-      const px = e.data.global.x;
-      const py = e.data.global.y;
+      const px = e.global.x;
+      const py = e.global.y;
 
       const left = model.x - model.width / 2;
       const right = model.x + model.width / 2;
@@ -82,7 +83,7 @@
       const bottom = model.y + model.height / 2;
 
       if (px > left && px < right && py > top && py < bottom) {
-        // Trigger idle motion
+        // Trigger a random idle motion
         if (model.motions?.Idle) {
           const idleKeys = Object.keys(model.motions.Idle);
           const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
