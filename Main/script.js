@@ -49,51 +49,45 @@
     }
 
     // ============================================================
-    // 5️⃣ Cursor tracking using pixi-live2d-remake API
+    // 5️⃣ Cursor tracking (Cubism 4)
     // ============================================================
     window.addEventListener("mousemove", (e) => {
       const rect = app.view.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      const centerX = app.screen.width * 0.25;
-      const centerY = app.screen.height / 2;
+      const dx = (mouseX - model.x) / (app.screen.width * 0.5);
+      const dy = (mouseY - model.y) / (app.screen.height * 0.5);
 
-      const nx = (mouseX - centerX) / (app.screen.width * 0.5); // normalized -1..1
-      const ny = (mouseY - centerY) / (app.screen.height * 0.5);
+      const core = model.internalModel.coreModel;
 
-      // Update Cubism 4 parameters correctly
-      model.setParam("ParamAngleX", nx * 30);
-      model.setParam("ParamAngleY", -ny * 30);
-      model.setParam("ParamAngleZ", nx * ny * 10);
-
-      model.setParam("ParamEyeBallX", nx);
-      model.setParam("ParamEyeBallY", -ny);
+      core.setParameterValueById("ParamAngleX", dx * 30);
+      core.setParameterValueById("ParamAngleY", dy * 30);
+      core.setParameterValueById("ParamAngleZ", dx * dy * 10);
+      core.setParameterValueById("ParamEyeBallX", dx);
+      core.setParameterValueById("ParamEyeBallY", dy);
     });
 
     // ============================================================
-    // 6️⃣ Hit interactions
+    // 6️⃣ Hit interaction (click → play idle)
     // ============================================================
-    model.interactive = true;
-    model.cursor = "pointer";
+    app.stage.interactive = true;
+    app.stage.on("pointerdown", (e) => {
+      const px = e.data.global.x;
+      const py = e.data.global.y;
 
-    model.on("pointerdown", (event) => {
-      const hitAreas = model.hitTest(event.data.global);
+      const left = model.x - model.width / 2;
+      const right = model.x + model.width / 2;
+      const top = model.y - model.height / 2;
+      const bottom = model.y + model.height / 2;
 
-      if (hitAreas.includes("Head")) {
-        model.addParam("ParamAngleZ", 10);
-        model.addParam("ParamCheek", 1.0);
-      }
-
-      if (hitAreas.includes("Body")) {
-        model.addParam("ParamBodyAngleX", 15);
-      }
-
-      // Play a random idle motion on click
-      if (model.motions?.Idle) {
-        const idleKeys = Object.keys(model.motions.Idle);
-        const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
-        model.motion("Idle", randomKey);
+      if (px > left && px < right && py > top && py < bottom) {
+        // Trigger idle motion
+        if (model.motions?.Idle) {
+          const idleKeys = Object.keys(model.motions.Idle);
+          const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
+          model.motion("Idle", randomKey);
+        }
       }
     });
 
