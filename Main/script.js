@@ -1,16 +1,12 @@
 (async () => {
 
-  //
   // 1. PIXI check
-  //
   if (typeof PIXI === "undefined") {
     console.error("❌ PIXI NOT LOADED");
     return;
   }
 
-  //
   // 2. Live2D plugin check
-  //
   if (!PIXI.live2d || !PIXI.live2d.Live2DModel) {
     console.error("❌ pixi-live2d-display NOT LOADED");
     return;
@@ -18,9 +14,7 @@
 
   const { Live2DModel } = PIXI.live2d;
 
-  //
   // 3. Create PIXI app
-  //
   const app = new PIXI.Application({
     background: "#1099bb",
     resizeTo: window,
@@ -29,9 +23,7 @@
 
   document.body.appendChild(app.view);
 
-  //
   // 4. Load MODEL3 JSON
-  //
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
 
   try {
@@ -47,39 +39,57 @@
     app.stage.addChild(model);
     console.log("✅ Model loaded, scaled, and positioned!");
 
-    // Enable blinking (Cubism 4)
+    // Enable blinking
     model.internalModel.settings.eyeBlink = true;
 
-    // Idle motion
+    // Play idle motion
     if (model.motions?.Idle) {
       const idleKeys = Object.keys(model.motions.Idle);
       model.motion("Idle", idleKeys[0]);
     }
 
     // ============================================================
-    // 5️⃣ Cursor tracking — CUBISM 4 CORRECT VERSION
+    // 5️⃣ Cursor tracking using pixi-live2d-remake API
     // ============================================================
     window.addEventListener("mousemove", (e) => {
-      const mouseX = e.clientX;
-      const mouseY = e.clientY;
+      const rect = app.view.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-      const dx = (mouseX - model.x) / (app.screen.width * 0.5);
-      const dy = (mouseY - model.y) / (app.screen.height * 0.5);
+      const centerX = app.screen.width * 0.25;
+      const centerY = app.screen.height / 2;
 
-      const core = model.internalModel.coreModel; // ← correct Cubism 4 target
+      const nx = (mouseX - centerX) / (app.screen.width * 0.5); // normalized -1..1
+      const ny = (mouseY - centerY) / (app.screen.height * 0.5);
 
-      core.setParameterValueById("ParamAngleX", dx * 30);
-      core.setParameterValueById("ParamAngleY", dy * 30);
-      core.setParameterValueById("ParamEyeBallX", dx);
-      core.setParameterValueById("ParamEyeBallY", dy);
+      // Update Cubism 4 parameters correctly
+      model.setParam("ParamAngleX", nx * 30);
+      model.setParam("ParamAngleY", -ny * 30);
+      model.setParam("ParamAngleZ", nx * ny * 10);
+
+      model.setParam("ParamEyeBallX", nx);
+      model.setParam("ParamEyeBallY", -ny);
     });
 
     // ============================================================
-    // 6️⃣ Hit interaction (click → play idle)
+    // 6️⃣ Hit interactions
     // ============================================================
     model.interactive = true;
     model.cursor = "pointer";
-    model.on("pointerdown", () => {
+
+    model.on("pointerdown", (event) => {
+      const hitAreas = model.hitTest(event.data.global);
+
+      if (hitAreas.includes("Head")) {
+        model.addParam("ParamAngleZ", 10);
+        model.addParam("ParamCheek", 1.0);
+      }
+
+      if (hitAreas.includes("Body")) {
+        model.addParam("ParamBodyAngleX", 15);
+      }
+
+      // Play a random idle motion on click
       if (model.motions?.Idle) {
         const idleKeys = Object.keys(model.motions.Idle);
         const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
@@ -88,7 +98,7 @@
     });
 
     // ============================================================
-    // 7️⃣ Custom ticker — updates model smoothly
+    // 7️⃣ Custom ticker
     // ============================================================
     const ticker = new PIXI.Ticker();
     ticker.add((delta) => {
