@@ -88,29 +88,4 @@
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
-
-  // API polling
-  async function fetchState() {
-    const res = await fetch("http://localhost:5005/state");
-    return await res.json();
-}
-
-setInterval(async () => {
-    const data = await fetchState();
-
-    if (!window.model) return;
-
-    // --- MOUTH ANIMATION ---
-    model.internalModel.coreModel.setParameterValueById(
-        "ParamMouthOpenY",
-        data.speaking ? 0.8 : 0.0
-    );
-
-    // --- EXPRESSIONS ---
-    if (data.emotion === "happy") model.internalModel.coreModel.setParameterValueById("ParamSmile", 1);
-    if (data.emotion === "sad") model.internalModel.coreModel.setParameterValueById("ParamEyeForm", -1);
-    if (data.emotion === "angry") model.internalModel.coreModel.setParameterValueById("ParamBrowForm", 1);
-
-}, 100); // 10 times per second
-
 })();
