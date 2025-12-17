@@ -6,7 +6,7 @@
   const { Live2DModel } = PIXI.live2d;
 
   const app = new PIXI.Application({
-    background: "#1099bb",
+    background: "#f4f3f2",
     resizeTo: window,
     autoStart: true,
   });
@@ -17,18 +17,18 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
-    // ===============================
+    // ============================================================
     // Placement & scale
-    // ===============================
+    // ============================================================
     model.anchor.set(0.5);
-    const scaleFactor = app.screen.height / model.height * 0.9;
+    const scaleFactor = (app.screen.height / model.height) * 0.9;
     model.scale.set(scaleFactor);
     model.x = app.screen.width * 0.25;
     model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
 
-    // Enable eye blink
+    // Enable eye blink (Cubism internal)
     model.internalModel.settings.eyeBlink = true;
 
     const core = model.internalModel.coreModel;
@@ -52,17 +52,15 @@
 
       dragging = true;
 
-      // --- Cubism-style hit test ---
+      // --- Cubism hit test ---
       if (model.hitTest("Head", x, y)) {
         console.log("[HIT] Head");
-
-        // Random expression
         model.setRandomExpression();
+        return;
+      }
 
-      } else if (model.hitTest("Body", x, y)) {
+      if (model.hitTest("Body", x, y)) {
         console.log("[HIT] Body");
-
-        // Random idle motion
         if (model.motions?.Idle) {
           const keys = Object.keys(model.motions.Idle);
           const key = keys[Math.floor(Math.random() * keys.length)];
@@ -72,7 +70,7 @@
     });
 
     // ------------------------------------------------------------
-    // Pointer MOVE (dragging)
+    // Pointer MOVE (Cubism-style dragging)
     // ------------------------------------------------------------
     app.stage.on("pointermove", (e) => {
       if (!dragging) return;
@@ -80,11 +78,14 @@
       const x = e.global.x;
       const y = e.global.y;
 
-      // Convert screen → model space
+      // Normalize to Cubism drag space (-1 ~ 1)
       const dx = (x - model.x) / (model.width * 0.5);
       const dy = (y - model.y) / (model.height * 0.5);
 
-      model.setDragging(dx, dy);
+      model.setDragging(
+        Math.max(-1, Math.min(1, dx)),
+        Math.max(-1, Math.min(1, dy))
+      );
     });
 
     // ------------------------------------------------------------
@@ -99,31 +100,36 @@
     app.stage.on("pointerupoutside", stopDrag);
 
     // ============================================================
-    // Cursor tracking (head / eyes)
+    // Cursor tracking (only when NOT dragging)
     // ============================================================
     let mouseX = model.x;
     let mouseY = model.y;
 
     window.addEventListener("mousemove", (e) => {
+      if (dragging) return;
+
       const rect = app.view.getBoundingClientRect();
       mouseX = e.clientX - rect.left;
       mouseY = e.clientY - rect.top;
     });
 
     // ============================================================
-    // Ticker (animation-safe)
+    // Ticker (Cubism-safe update loop)
     // ============================================================
     const ticker = new PIXI.Ticker();
 
     ticker.add((delta) => {
-      const dx = (mouseX - model.x) / (app.screen.width * 0.5);
-      const dy = (mouseY - model.y) / (app.screen.height * 0.5);
+      // Cursor-based look (idle behavior)
+      if (!dragging) {
+        const dx = (mouseX - model.x) / (app.screen.width * 0.5);
+        const dy = (mouseY - model.y) / (app.screen.height * 0.5);
 
-      core.setParameterValueById("ParamAngleX", dx * 30);
-      core.setParameterValueById("ParamAngleY", dy * 30);
-      core.setParameterValueById("ParamAngleZ", dx * dy * 10);
-      core.setParameterValueById("ParamEyeBallX", dx);
-      core.setParameterValueById("ParamEyeBallY", dy);
+        core.setParameterValueById("ParamAngleX", dx * 30);
+        core.setParameterValueById("ParamAngleY", dy * 30);
+        core.setParameterValueById("ParamAngleZ", dx * dy * 10);
+        core.setParameterValueById("ParamEyeBallX", dx);
+        core.setParameterValueById("ParamEyeBallY", dy);
+      }
 
       model.update(delta);
       app.renderer.render(app.stage);
