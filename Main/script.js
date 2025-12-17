@@ -119,7 +119,7 @@
     // ============================================================
     const ticker = new PIXI.Ticker();
 
-    ticker.add(() => {
+    ticker.add((delta) => {
       const dx = dragging
         ? dragX
         : (mouseX - model.x) / (app.screen.width * 0.5);
