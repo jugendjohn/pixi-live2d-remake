@@ -6,7 +6,7 @@
   const { Live2DModel } = PIXI.live2d;
 
   const app = new PIXI.Application({
-    background: "#f4f2f3",
+    background: "#f4f3f2",
     resizeTo: window,
     autoStart: true,
   });
