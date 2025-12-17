@@ -43,9 +43,6 @@
     let dragX = 0;
     let dragY = 0;
 
-    // ------------------------------------------------------------
-    // Pointer DOWN (hit test)
-    // ------------------------------------------------------------
     app.stage.on("pointerdown", (e) => {
       const x = e.global.x;
       const y = e.global.y;
@@ -54,8 +51,6 @@
 
       if (model.hitTest("Head", x, y)) {
         console.log("[HIT] Head");
-
-        // Play random expression (pixi-live2d way)
         const expressions = model.internalModel.motionManager?.expressionManager?._motions;
         if (expressions && expressions.size > 0) {
           const keys = [...expressions.keys()];
@@ -66,7 +61,6 @@
 
       if (model.hitTest("Body", x, y)) {
         console.log("[HIT] Body");
-
         if (model.motions?.Idle) {
           const keys = Object.keys(model.motions.Idle);
           model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
@@ -74,12 +68,8 @@
       }
     });
 
-    // ------------------------------------------------------------
-    // Pointer MOVE (manual drag → Cubism params)
-    // ------------------------------------------------------------
     app.stage.on("pointermove", (e) => {
       if (!dragging) return;
-
       const x = e.global.x;
       const y = e.global.y;
 
@@ -90,9 +80,6 @@
       dragY = Math.max(-1, Math.min(1, dragY));
     });
 
-    // ------------------------------------------------------------
-    // Pointer UP
-    // ------------------------------------------------------------
     const stopDrag = () => {
       dragging = false;
       dragX = 0;
@@ -102,9 +89,6 @@
     app.stage.on("pointerup", stopDrag);
     app.stage.on("pointerupoutside", stopDrag);
 
-    // ============================================================
-    // Cursor tracking (idle)
-    // ============================================================
     let mouseX = model.x;
     let mouseY = model.y;
 
@@ -140,6 +124,41 @@
     });
 
     ticker.start();
+
+    // ============================================================
+    // TTS Functionality
+    // ============================================================
+    const ttsInput = document.getElementById("tts-input");
+    const ttsButton = document.getElementById("tts-button");
+
+    ttsButton.addEventListener("click", () => {
+      const text = ttsInput.value.trim();
+      if (!text) return;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.pitch = 1;
+      utterance.rate = 1;
+
+      utterance.onstart = () => {
+        const lipTicker = new PIXI.Ticker();
+        let direction = 1;
+
+        lipTicker.add(() => {
+          let value = core.getParameterValueById("ParamMouthOpenY") || 0;
+          value += 0.05 * direction;
+          if (value > 0.5 || value < 0) direction *= -1;
+
+          core.setParameterValueById("ParamMouthOpenY", value);
+          model.update(1);
+          app.renderer.render(app.stage);
+        });
+
+        utterance.onend = () => lipTicker.stop();
+        lipTicker.start();
+      };
+
+      speechSynthesis.speak(utterance);
+    });
 
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
