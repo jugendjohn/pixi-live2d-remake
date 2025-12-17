@@ -17,9 +17,9 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
-    // ============================================================
+    // ===============================
     // Placement & scale
-    // ============================================================
+    // ===============================
     model.anchor.set(0.5);
     const scaleFactor = (app.screen.height / model.height) * 0.9;
     model.scale.set(scaleFactor);
@@ -28,23 +28,23 @@
 
     app.stage.addChild(model);
 
-    // Enable eye blink (Cubism internal)
     model.internalModel.settings.eyeBlink = true;
-
     const core = model.internalModel.coreModel;
 
     console.log("✅ Model loaded");
 
     // ============================================================
-    // Interaction setup
+    // Interaction
     // ============================================================
     app.stage.eventMode = "static";
     app.stage.hitArea = app.screen;
 
     let dragging = false;
+    let dragX = 0;
+    let dragY = 0;
 
     // ------------------------------------------------------------
-    // Pointer DOWN (tap / drag start)
+    // Pointer DOWN (hit test)
     // ------------------------------------------------------------
     app.stage.on("pointerdown", (e) => {
       const x = e.global.x;
@@ -52,25 +52,30 @@
 
       dragging = true;
 
-      // --- Cubism hit test ---
       if (model.hitTest("Head", x, y)) {
         console.log("[HIT] Head");
-        model.setRandomExpression();
+
+        // Play random expression (pixi-live2d way)
+        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
+        if (expressions && expressions.size > 0) {
+          const keys = [...expressions.keys()];
+          model.expression(keys[Math.floor(Math.random() * keys.length)]);
+        }
         return;
       }
 
       if (model.hitTest("Body", x, y)) {
         console.log("[HIT] Body");
+
         if (model.motions?.Idle) {
           const keys = Object.keys(model.motions.Idle);
-          const key = keys[Math.floor(Math.random() * keys.length)];
-          model.motion("Idle", key);
+          model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
         }
       }
     });
 
     // ------------------------------------------------------------
-    // Pointer MOVE (Cubism-style dragging)
+    // Pointer MOVE (manual drag → Cubism params)
     // ------------------------------------------------------------
     app.stage.on("pointermove", (e) => {
       if (!dragging) return;
@@ -78,60 +83,59 @@
       const x = e.global.x;
       const y = e.global.y;
 
-      // Normalize to Cubism drag space (-1 ~ 1)
-      const dx = (x - model.x) / (model.width * 0.5);
-      const dy = (y - model.y) / (model.height * 0.5);
+      dragX = (x - model.x) / (model.width * 0.5);
+      dragY = (y - model.y) / (model.height * 0.5);
 
-      model.setDragging(
-        Math.max(-1, Math.min(1, dx)),
-        Math.max(-1, Math.min(1, dy))
-      );
+      dragX = Math.max(-1, Math.min(1, dragX));
+      dragY = Math.max(-1, Math.min(1, dragY));
     });
 
     // ------------------------------------------------------------
-    // Pointer UP (drag end)
+    // Pointer UP
     // ------------------------------------------------------------
     const stopDrag = () => {
       dragging = false;
-      model.setDragging(0, 0);
+      dragX = 0;
+      dragY = 0;
     };
 
     app.stage.on("pointerup", stopDrag);
     app.stage.on("pointerupoutside", stopDrag);
 
     // ============================================================
-    // Cursor tracking (only when NOT dragging)
+    // Cursor tracking (idle)
     // ============================================================
     let mouseX = model.x;
     let mouseY = model.y;
 
     window.addEventListener("mousemove", (e) => {
       if (dragging) return;
-
       const rect = app.view.getBoundingClientRect();
       mouseX = e.clientX - rect.left;
       mouseY = e.clientY - rect.top;
     });
 
     // ============================================================
-    // Ticker (Cubism-safe update loop)
+    // Ticker (Cubism-style update)
     // ============================================================
     const ticker = new PIXI.Ticker();
 
-    ticker.add((delta) => {
-      // Cursor-based look (idle behavior)
-      if (!dragging) {
-        const dx = (mouseX - model.x) / (app.screen.width * 0.5);
-        const dy = (mouseY - model.y) / (app.screen.height * 0.5);
+    ticker.add(() => {
+      const dx = dragging
+        ? dragX
+        : (mouseX - model.x) / (app.screen.width * 0.5);
+      const dy = dragging
+        ? dragY
+        : (mouseY - model.y) / (app.screen.height * 0.5);
 
-        core.setParameterValueById("ParamAngleX", dx * 30);
-        core.setParameterValueById("ParamAngleY", dy * 30);
-        core.setParameterValueById("ParamAngleZ", dx * dy * 10);
-        core.setParameterValueById("ParamEyeBallX", dx);
-        core.setParameterValueById("ParamEyeBallY", dy);
-      }
+      core.setParameterValueById("ParamAngleX", dx * 30);
+      core.setParameterValueById("ParamAngleY", dy * 30);
+      core.setParameterValueById("ParamAngleZ", dx * dy * -30);
+      core.setParameterValueById("ParamBodyAngleX", dx * 10);
+      core.setParameterValueById("ParamEyeBallX", dx);
+      core.setParameterValueById("ParamEyeBallY", dy);
 
-      model.update(delta);
+      model.update(1);
       app.renderer.render(app.stage);
     });
 
