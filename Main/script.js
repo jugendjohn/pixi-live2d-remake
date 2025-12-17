@@ -6,7 +6,7 @@
   const { Live2DModel } = PIXI.live2d;
 
   const app = new PIXI.Application({
-    background: "#1099bb",
+    background: "#f4f2f3",
     resizeTo: window,
     autoStart: true,
   });
@@ -27,12 +27,14 @@
     model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
-    model.internalModel.settings.eyeBlink = true;
 
+    model.internalModel.settings.eyeBlink = true;
     const core = model.internalModel.coreModel;
 
+    console.log("✅ Model loaded");
+
     // ============================================================
-    // Drag + hit logic
+    // Interaction
     // ============================================================
     app.stage.eventMode = "static";
     app.stage.hitArea = app.screen;
@@ -41,30 +43,56 @@
     let dragX = 0;
     let dragY = 0;
 
+    // ------------------------------------------------------------
+    // Pointer DOWN (hit test)
+    // ------------------------------------------------------------
     app.stage.on("pointerdown", (e) => {
+      const x = e.global.x;
+      const y = e.global.y;
+
       dragging = true;
+
+      if (model.hitTest("Head", x, y)) {
+        console.log("[HIT] Head");
+
+        // Play random expression (pixi-live2d way)
+        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
+        if (expressions && expressions.size > 0) {
+          const keys = [...expressions.keys()];
+          model.expression(keys[Math.floor(Math.random() * keys.length)]);
+        }
+        return;
+      }
+
+      if (model.hitTest("Body", x, y)) {
+        console.log("[HIT] Body");
+
+        if (model.motions?.Idle) {
+          const keys = Object.keys(model.motions.Idle);
+          model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
+        }
+      }
+    });
+
+    // ------------------------------------------------------------
+    // Pointer MOVE (manual drag → Cubism params)
+    // ------------------------------------------------------------
+    app.stage.on("pointermove", (e) => {
+      if (!dragging) return;
 
       const x = e.global.x;
       const y = e.global.y;
 
-      if (model.hitTest("Head", x, y)) {
-        model.expression("F01"); // fallback expression
-      }
+      dragX = (x - model.x) / (model.width * 0.5);
+      dragY = (y - model.y) / (model.height * 0.5);
 
-      if (model.hitTest("Body", x, y) && model.motions?.Idle) {
-        const keys = Object.keys(model.motions.Idle);
-        model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
-      }
-    });
-
-    app.stage.on("pointermove", (e) => {
-      if (!dragging) return;
-      dragX = (e.global.x - model.x) / (model.width * 0.5);
-      dragY = (e.global.y - model.y) / (model.height * 0.5);
       dragX = Math.max(-1, Math.min(1, dragX));
       dragY = Math.max(-1, Math.min(1, dragY));
     });
 
+    // ------------------------------------------------------------
+    // Pointer UP
+    // ------------------------------------------------------------
     const stopDrag = () => {
       dragging = false;
       dragX = 0;
@@ -75,7 +103,7 @@
     app.stage.on("pointerupoutside", stopDrag);
 
     // ============================================================
-    // Cursor tracking
+    // Cursor tracking (idle)
     // ============================================================
     let mouseX = model.x;
     let mouseY = model.y;
@@ -88,38 +116,11 @@
     });
 
     // ============================================================
-    // TTS + Lip Sync
-    // ============================================================
-    let speaking = false;
-    let mouthOpen = 0;
-
-    const speakBtn = document.getElementById("ttsSpeak");
-    const textBox = document.getElementById("ttsText");
-
-    speakBtn.onclick = () => {
-      const text = textBox.value.trim();
-      if (!text) return;
-
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1;
-      utter.pitch = 1.1;
-
-      utter.onstart = () => (speaking = true);
-      utter.onend = () => {
-        speaking = false;
-        mouthOpen = 0;
-      };
-
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utter);
-    };
-
-    // ============================================================
-    // Ticker (animation)
+    // Ticker (Cubism-style update)
     // ============================================================
     const ticker = new PIXI.Ticker();
 
-    ticker.add((delta) => {
+    ticker.add(() => {
       const dx = dragging
         ? dragX
         : (mouseX - model.x) / (app.screen.width * 0.5);
@@ -127,22 +128,12 @@
         ? dragY
         : (mouseY - model.y) / (app.screen.height * 0.5);
 
-      // Head & body
       core.setParameterValueById("ParamAngleX", dx * 30);
       core.setParameterValueById("ParamAngleY", dy * 30);
       core.setParameterValueById("ParamAngleZ", dx * dy * -30);
       core.setParameterValueById("ParamBodyAngleX", dx * 10);
       core.setParameterValueById("ParamEyeBallX", dx);
       core.setParameterValueById("ParamEyeBallY", dy);
-
-      // Lip sync (simple RMS simulation)
-      if (speaking) {
-        mouthOpen += (Math.random() * 0.6 - mouthOpen) * 0.5;
-      } else {
-        mouthOpen *= 0.8;
-      }
-
-      core.setParameterValueById("ParamMouthOpenY", mouthOpen);
 
       model.update(1);
       app.renderer.render(app.stage);
