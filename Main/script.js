@@ -34,7 +34,63 @@
     console.log("✅ Model loaded");
 
     // ============================================================
-    // Interaction
+    // TTS Input Box (HTML overlay)
+    // ============================================================
+    const ttsContainer = document.createElement("div");
+    ttsContainer.style.position = "absolute";
+    ttsContainer.style.top = "20px";
+    ttsContainer.style.right = "20px";
+    ttsContainer.style.width = "250px";
+    ttsContainer.style.background = "rgba(255,255,255,0.9)";
+    ttsContainer.style.padding = "10px";
+    ttsContainer.style.borderRadius = "8px";
+    ttsContainer.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+    document.body.appendChild(ttsContainer);
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Enter text to speak";
+    input.style.width = "100%";
+    input.style.marginBottom = "8px";
+    ttsContainer.appendChild(input);
+
+    const button = document.createElement("button");
+    button.innerText = "Speak";
+    button.style.width = "100%";
+    ttsContainer.appendChild(button);
+
+    button.addEventListener("click", () => {
+      const text = input.value.trim();
+      if (!text) return;
+
+      // TTS using Web Speech API
+      const utterance = new SpeechSynthesisUtterance(text);
+
+      // Optional: adjust pitch, rate, voice
+      utterance.pitch = 1;
+      utterance.rate = 1;
+
+      // Trigger lip-sync (simplified)
+      utterance.onstart = () => {
+        const lipSyncTicker = new PIXI.Ticker();
+        let direction = 1;
+        lipSyncTicker.add(() => {
+          const value = core.getParameterValueById("ParamMouthOpenY") || 0;
+          core.setParameterValueById("ParamMouthOpenY", value + 0.05 * direction);
+          if (value > 0.5 || value < 0) direction *= -1;
+          model.update(1);
+          app.renderer.render(app.stage);
+        });
+        lipSyncTicker.start();
+
+        utterance.onend = () => lipSyncTicker.stop();
+      };
+
+      speechSynthesis.speak(utterance);
+    });
+
+    // ============================================================
+    // Interaction & Dragging (existing code)
     // ============================================================
     app.stage.eventMode = "static";
     app.stage.hitArea = app.screen;
@@ -43,19 +99,12 @@
     let dragX = 0;
     let dragY = 0;
 
-    // ------------------------------------------------------------
-    // Pointer DOWN (hit test)
-    // ------------------------------------------------------------
     app.stage.on("pointerdown", (e) => {
       const x = e.global.x;
       const y = e.global.y;
-
       dragging = true;
 
       if (model.hitTest("Head", x, y)) {
-        console.log("[HIT] Head");
-
-        // Play random expression (pixi-live2d way)
         const expressions = model.internalModel.motionManager?.expressionManager?._motions;
         if (expressions && expressions.size > 0) {
           const keys = [...expressions.keys()];
@@ -65,8 +114,6 @@
       }
 
       if (model.hitTest("Body", x, y)) {
-        console.log("[HIT] Body");
-
         if (model.motions?.Idle) {
           const keys = Object.keys(model.motions.Idle);
           model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
@@ -74,25 +121,16 @@
       }
     });
 
-    // ------------------------------------------------------------
-    // Pointer MOVE (manual drag → Cubism params)
-    // ------------------------------------------------------------
     app.stage.on("pointermove", (e) => {
       if (!dragging) return;
-
       const x = e.global.x;
       const y = e.global.y;
-
       dragX = (x - model.x) / (model.width * 0.5);
       dragY = (y - model.y) / (model.height * 0.5);
-
       dragX = Math.max(-1, Math.min(1, dragX));
       dragY = Math.max(-1, Math.min(1, dragY));
     });
 
-    // ------------------------------------------------------------
-    // Pointer UP
-    // ------------------------------------------------------------
     const stopDrag = () => {
       dragging = false;
       dragX = 0;
@@ -102,9 +140,6 @@
     app.stage.on("pointerup", stopDrag);
     app.stage.on("pointerupoutside", stopDrag);
 
-    // ============================================================
-    // Cursor tracking (idle)
-    // ============================================================
     let mouseX = model.x;
     let mouseY = model.y;
 
@@ -115,11 +150,7 @@
       mouseY = e.clientY - rect.top;
     });
 
-    // ============================================================
-    // Ticker (Cubism-style update)
-    // ============================================================
     const ticker = new PIXI.Ticker();
-
     ticker.add(() => {
       const dx = dragging
         ? dragX
@@ -138,7 +169,6 @@
       model.update(1);
       app.renderer.render(app.stage);
     });
-
     ticker.start();
 
   } catch (e) {
