@@ -139,6 +139,17 @@
       utterance.pitch = 1;
       utterance.rate = 1;
 
+        // Select a female voice if available
+      const voices = speechSynthesis.getVoices();
+      const femaleVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes("female") || 
+        voice.name.toLowerCase().includes("zira") || // fallback examples for common female voices
+        voice.name.toLowerCase().includes("susan")
+      );
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
+
       utterance.onstart = () => {
         const lipTicker = new PIXI.Ticker();
         let direction = 1;
