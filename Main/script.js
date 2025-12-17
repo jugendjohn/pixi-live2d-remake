@@ -1,6 +1,7 @@
 (async () => {
   if (typeof PIXI === "undefined") return console.error("❌ PIXI NOT LOADED");
-  if (!PIXI.live2d || !PIXI.live2d.Live2DModel) return console.error("❌ pixi-live2d-display NOT LOADED");
+  if (!PIXI.live2d || !PIXI.live2d.Live2DModel)
+    return console.error("❌ pixi-live2d-display NOT LOADED");
 
   const { Live2DModel } = PIXI.live2d;
 
@@ -16,7 +17,9 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
-    // Center & scale
+    // ===============================
+    // Placement & scale
+    // ===============================
     model.anchor.set(0.5);
     const scaleFactor = app.screen.height / model.height * 0.9;
     model.scale.set(scaleFactor);
@@ -24,18 +27,83 @@
     model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
-    console.log("✅ Model loaded, scaled, and positioned!");
 
-    // Enable blinking
+    // Enable eye blink
     model.internalModel.settings.eyeBlink = true;
 
-    // Wait for coreModel to be ready
     const core = model.internalModel.coreModel;
 
+    console.log("✅ Model loaded");
+
     // ============================================================
-    // Cursor tracking in ticker
+    // Interaction setup
     // ============================================================
-    let mouseX = model.x, mouseY = model.y;
+    app.stage.eventMode = "static";
+    app.stage.hitArea = app.screen;
+
+    let dragging = false;
+
+    // ------------------------------------------------------------
+    // Pointer DOWN (tap / drag start)
+    // ------------------------------------------------------------
+    app.stage.on("pointerdown", (e) => {
+      const x = e.global.x;
+      const y = e.global.y;
+
+      dragging = true;
+
+      // --- Cubism-style hit test ---
+      if (model.hitTest("Head", x, y)) {
+        console.log("[HIT] Head");
+
+        // Random expression
+        model.setRandomExpression();
+
+      } else if (model.hitTest("Body", x, y)) {
+        console.log("[HIT] Body");
+
+        // Random idle motion
+        if (model.motions?.Idle) {
+          const keys = Object.keys(model.motions.Idle);
+          const key = keys[Math.floor(Math.random() * keys.length)];
+          model.motion("Idle", key);
+        }
+      }
+    });
+
+    // ------------------------------------------------------------
+    // Pointer MOVE (dragging)
+    // ------------------------------------------------------------
+    app.stage.on("pointermove", (e) => {
+      if (!dragging) return;
+
+      const x = e.global.x;
+      const y = e.global.y;
+
+      // Convert screen → model space
+      const dx = (x - model.x) / (model.width * 0.5);
+      const dy = (y - model.y) / (model.height * 0.5);
+
+      model.setDragging(dx, dy);
+    });
+
+    // ------------------------------------------------------------
+    // Pointer UP (drag end)
+    // ------------------------------------------------------------
+    const stopDrag = () => {
+      dragging = false;
+      model.setDragging(0, 0);
+    };
+
+    app.stage.on("pointerup", stopDrag);
+    app.stage.on("pointerupoutside", stopDrag);
+
+    // ============================================================
+    // Cursor tracking (head / eyes)
+    // ============================================================
+    let mouseX = model.x;
+    let mouseY = model.y;
+
     window.addEventListener("mousemove", (e) => {
       const rect = app.view.getBoundingClientRect();
       mouseX = e.clientX - rect.left;
@@ -43,34 +111,11 @@
     });
 
     // ============================================================
-    // Hit interactions
-    // ============================================================
-    app.stage.eventMode = "static";
-    app.stage.on("pointerdown", (e) => {
-      const px = e.global.x;
-      const py = e.global.y;
-
-      const left = model.x - model.width / 2;
-      const right = model.x + model.width / 2;
-      const top = model.y - model.height / 2;
-      const bottom = model.y + model.height / 2;
-
-      if (px > left && px < right && py > top && py < bottom) {
-        // Play random idle motion
-        if (model.motions?.Idle) {
-          const idleKeys = Object.keys(model.motions.Idle);
-          const randomKey = idleKeys[Math.floor(Math.random() * idleKeys.length)];
-          model.motion("Idle", randomKey);
-        }
-      }
-    });
-
-    // ============================================================
-    // Custom ticker
+    // Ticker (animation-safe)
     // ============================================================
     const ticker = new PIXI.Ticker();
-    ticker.add(() => {
-      // Head & eye movement
+
+    ticker.add((delta) => {
       const dx = (mouseX - model.x) / (app.screen.width * 0.5);
       const dy = (mouseY - model.y) / (app.screen.height * 0.5);
 
@@ -80,9 +125,10 @@
       core.setParameterValueById("ParamEyeBallX", dx);
       core.setParameterValueById("ParamEyeBallY", dy);
 
+      model.update(delta);
       app.renderer.render(app.stage);
-      model.update(ticker.deltaMS / 16.6667); // pass delta time in approx frames
     });
+
     ticker.start();
 
   } catch (e) {
