@@ -46,12 +46,11 @@
     app.stage.on("pointerdown", (e) => {
       const x = e.global.x;
       const y = e.global.y;
-
       dragging = true;
 
       if (model.hitTest("Head", x, y)) {
-        console.log("[HIT] Head");
-        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
+        const expressions =
+          model.internalModel.motionManager?.expressionManager?._motions;
         if (expressions && expressions.size > 0) {
           const keys = [...expressions.keys()];
           model.expression(keys[Math.floor(Math.random() * keys.length)]);
@@ -60,7 +59,6 @@
       }
 
       if (model.hitTest("Body", x, y)) {
-        console.log("[HIT] Body");
         if (model.motions?.Idle) {
           const keys = Object.keys(model.motions.Idle);
           model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
@@ -70,12 +68,8 @@
 
     app.stage.on("pointermove", (e) => {
       if (!dragging) return;
-      const x = e.global.x;
-      const y = e.global.y;
-
-      dragX = (x - model.x) / (model.width * 0.5);
-      dragY = (y - model.y) / (model.height * 0.5);
-
+      dragX = (e.global.x - model.x) / (model.width * 0.5);
+      dragY = (e.global.y - model.y) / (model.height * 0.5);
       dragX = Math.max(-1, Math.min(1, dragX));
       dragY = Math.max(-1, Math.min(1, dragY));
     });
@@ -100,10 +94,9 @@
     });
 
     // ============================================================
-    // Ticker (Cubism-style update)
+    // Main Ticker
     // ============================================================
     const ticker = new PIXI.Ticker();
-
     ticker.add(() => {
       const dx = dragging
         ? dragX
@@ -122,16 +115,20 @@
       model.update(1);
       app.renderer.render(app.stage);
     });
-
     ticker.start();
 
     // ============================================================
-    // TTS Functionality
+    // TTS + REAL Audio Lip Sync
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
 
-    ttsButton.addEventListener("click", () => {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    ttsButton.addEventListener("click", async () => {
       const text = ttsInput.value.trim();
       if (!text) return;
 
@@ -139,33 +136,41 @@
       utterance.pitch = 1;
       utterance.rate = 1;
 
-        // Select a female voice if available
+      // Female voice selection
       const voices = speechSynthesis.getVoices();
-      const femaleVoice = voices.find(voice => 
-        voice.name.toLowerCase().includes("female") || 
-        voice.name.toLowerCase().includes("zira") || // fallback examples for common female voices
-        voice.name.toLowerCase().includes("susan")
+      const femaleVoice = voices.find(v =>
+        /female|zira|samantha|victoria|susan/i.test(v.name)
       );
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
-      }
+      if (femaleVoice) utterance.voice = femaleVoice;
+
+      let lipSyncActive = false;
 
       utterance.onstart = () => {
+        lipSyncActive = true;
+
         const lipTicker = new PIXI.Ticker();
-        let direction = 1;
-
         lipTicker.add(() => {
-          let value = core.getParameterValueById("ParamMouthOpenY") || 0;
-          value += 0.05 * direction;
-          if (value > 0.5 || value < 0) direction *= -1;
+          if (!lipSyncActive) return;
 
-          core.setParameterValueById("ParamMouthOpenY", value);
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+          const volume = sum / dataArray.length;
+
+          const mouthOpen = Math.min(volume / 80, 1);
+          core.setParameterValueById("ParamMouthOpenY", mouthOpen);
+
           model.update(1);
           app.renderer.render(app.stage);
         });
 
-        utterance.onend = () => lipTicker.stop();
         lipTicker.start();
+
+        utterance.onend = () => {
+          lipSyncActive = false;
+          core.setParameterValueById("ParamMouthOpenY", 0);
+          lipTicker.stop();
+        };
       };
 
       speechSynthesis.speak(utterance);
