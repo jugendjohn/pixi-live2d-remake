@@ -1,10 +1,10 @@
 (async () => {
   if (typeof PIXI === "undefined") return console.error("❌ PIXI NOT LOADED");
-  if (!PIXI.live2d?.Live2DModel) return console.error("❌ pixi-live2d-display NOT LOADED");
+  if (!PIXI.live2d || !PIXI.live2d.Live2DModel)
+    return console.error("❌ pixi-live2d-display NOT LOADED");
 
   const { Live2DModel } = PIXI.live2d;
 
-  // ---------------- PIXI APP ----------------
   const app = new PIXI.Application({
     background: "#f4f3f2",
     resizeTo: window,
@@ -16,21 +16,30 @@
 
   try {
     const model = await Live2DModel.from(MODEL_PATH);
-    const core = model.internalModel.coreModel;
 
-    // ---------------- Placement & Scale ----------------
+    // ===============================
+    // Placement & scale
+    // ===============================
     model.anchor.set(0.5);
     const scaleFactor = (app.screen.height / model.height) * 0.9;
     model.scale.set(scaleFactor);
     model.x = app.screen.width * 0.25;
     model.y = app.screen.height / 2;
 
+    // 🔹 enable interaction on model
+    model.eventMode = "static";
+    model.cursor = "pointer";
+
     app.stage.addChild(model);
+
     model.internalModel.settings.eyeBlink = true;
+    const core = model.internalModel.coreModel;
 
     console.log("✅ Model loaded");
 
-    // ---------------- Cursor Interaction ----------------
+    // ============================================================
+    // Interaction
+    // ============================================================
     app.stage.eventMode = "static";
     app.stage.hitArea = app.screen;
 
@@ -43,21 +52,37 @@
       const y = e.global.y;
       dragging = true;
 
-      // Optional: change expression on head click
       if (model.hitTest("Head", x, y)) {
-        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
+        const expressions =
+          model.internalModel.motionManager?.expressionManager?._motions;
         if (expressions && expressions.size > 0) {
           const keys = [...expressions.keys()];
           model.expression(keys[Math.floor(Math.random() * keys.length)]);
         }
         return;
       }
+
+      if (model.hitTest("Body", x, y)) {
+        if (model.motions?.Idle) {
+          const keys = Object.keys(model.motions.Idle);
+          model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
+        }
+      }
     });
 
     app.stage.on("pointermove", (e) => {
-      if (!dragging) return;
-      dragX = (e.global.x - model.x) / (model.width * 0.5);
-      dragY = (e.global.y - model.y) / (model.height * 0.5);
+      const x = e.global.x;
+      const y = e.global.y;
+
+      // 🔹 cursor interaction (when not dragging)
+      if (!dragging) {
+        model.focus(x, y);
+        return;
+      }
+
+      // dragging logic
+      dragX = (x - model.x) / (model.width * 0.5);
+      dragY = (y - model.y) / (model.height * 0.5);
       dragX = Math.max(-1, Math.min(1, dragX));
       dragY = Math.max(-1, Math.min(1, dragY));
     });
@@ -71,74 +96,13 @@
     app.stage.on("pointerup", stopDrag);
     app.stage.on("pointerupoutside", stopDrag);
 
-    let mouseX = model.x;
-    let mouseY = model.y;
-
-    window.addEventListener("mousemove", (e) => {
-      if (dragging) return;
-      const rect = app.view.getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
-    });
-
-    // ---------------- TTS + WORD OUTPUT ----------------
-    const ttsInput = document.getElementById("tts-input");
-    const ttsButton = document.getElementById("tts-button");
-    const ttsOutput = document.getElementById("tts-output");
-
-    let speaking = false;
-    let mouthValue = 0;
-
-    function getFemaleVoice() {
-      const voices = speechSynthesis.getVoices();
-      return voices.find(v => /female|zira|samantha|victoria|susan/i.test(v.name));
-    }
-
-    ttsButton.addEventListener("click", () => {
-      const text = ttsInput.value.trim();
-      if (!text) return;
-
-      speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.pitch = 1;
-      utterance.rate = 1;
-
-      const voice = getFemaleVoice();
-      if (voice) utterance.voice = voice;
-
-      // Word output
-      const words = text.split(/\s+/);
-      ttsOutput.textContent = "";
-      let wordIndex = 0;
-      const wordInterval = Math.max(150, 600 / words.length);
-
-      const wordTimer = setInterval(() => {
-        if (wordIndex >= words.length) {
-          clearInterval(wordTimer);
-          return;
-        }
-        ttsOutput.textContent += words[wordIndex] + " ";
-        wordIndex++;
-      }, wordInterval);
-
-      utterance.onstart = () => { speaking = true; };
-      utterance.onend = () => {
-        speaking = false;
-        mouthValue = 0;
-        core.setParameterValueById("ParamMouthOpenY", 0);
-        clearInterval(wordTimer);
-      };
-
-      speechSynthesis.speak(utterance);
-    });
-
-    speechSynthesis.onvoiceschanged = () => {};
-
-    // ---------------- PIXI TICKER ----------------
+    // ============================================================
+    // Main Ticker (body follow / subtle motion)
+    // ============================================================
     const ticker = new PIXI.Ticker();
     ticker.add(() => {
-      const dx = dragging ? dragX : (mouseX - model.x) / (app.screen.width * 0.5);
-      const dy = dragging ? dragY : (mouseY - model.y) / (app.screen.height * 0.5);
+      const dx = dragging ? dragX : 0;
+      const dy = dragging ? dragY : 0;
 
       core.setParameterValueById("ParamAngleX", dx * 30);
       core.setParameterValueById("ParamAngleY", dy * 30);
@@ -147,19 +111,84 @@
       core.setParameterValueById("ParamEyeBallX", dx);
       core.setParameterValueById("ParamEyeBallY", dy);
 
-      // Simulated lip sync
-      if (speaking) {
-        mouthValue += (Math.random() * 0.8 - mouthValue) * 0.35;
-        mouthValue = Math.max(0, Math.min(1, mouthValue));
-        core.setParameterValueById("ParamMouthOpenY", mouthValue);
-      }
-
       model.update(1);
       app.renderer.render(app.stage);
     });
     ticker.start();
 
-  } catch (err) {
-    console.error("❌ MODEL LOAD ERROR:", err);
+    // ============================================================
+    // TTS + REAL Audio Lip Sync + Word Output
+    // ============================================================
+    const ttsInput = document.getElementById("tts-input");
+    const ttsButton = document.getElementById("tts-button");
+    const ttsOutput = document.getElementById("tts-output");
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 512;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    ttsButton.addEventListener("click", () => {
+      const text = ttsInput.value.trim();
+      if (!text) return;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.pitch = 1;
+      utterance.rate = 1;
+
+      const voices = speechSynthesis.getVoices();
+      const femaleVoice = voices.find(v =>
+        /female|zira|samantha|victoria|susan/i.test(v.name)
+      );
+      if (femaleVoice) utterance.voice = femaleVoice;
+
+      const words = text.split(/\s+/);
+      ttsOutput.textContent = "";
+      let wordIndex = 0;
+
+      const wordTimer = setInterval(() => {
+        if (wordIndex >= words.length) {
+          clearInterval(wordTimer);
+          return;
+        }
+        ttsOutput.textContent += words[wordIndex] + " ";
+        wordIndex++;
+      }, 150);
+
+      let lipSyncActive = false;
+
+      utterance.onstart = () => {
+        lipSyncActive = true;
+
+        const lipTicker = new PIXI.Ticker();
+        lipTicker.add(() => {
+          if (!lipSyncActive) return;
+
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+          const volume = sum / dataArray.length;
+
+          core.setParameterValueById(
+            "ParamMouthOpenY",
+            Math.min(volume / 80, 1)
+          );
+        });
+
+        lipTicker.start();
+
+        utterance.onend = () => {
+          lipSyncActive = false;
+          core.setParameterValueById("ParamMouthOpenY", 0);
+          clearInterval(wordTimer);
+          lipTicker.stop();
+        };
+      };
+
+      speechSynthesis.speak(utterance);
+    });
+
+  } catch (e) {
+    console.error("❌ MODEL LOAD ERROR:", e);
   }
 })();
