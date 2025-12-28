@@ -58,10 +58,10 @@
     // ============================================================
     // TTS + SIMULATED LIP SYNC + WORD OUTPUT
     // ============================================================
-    const ttsPanel = document.getElementById("tts-panel");
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
     const ttsOutput = document.getElementById("tts-output");
+    const ttsPanel = document.getElementById("tts-panel");
 
     let speaking = false;
     let mouthValue = 0;
@@ -90,7 +90,6 @@
       const words = text.split(/\s+/);
       ttsOutput.textContent = "";
       let wordIndex = 0;
-
       const wordInterval = Math.max(150, 600 / words.length);
 
       const wordTimer = setInterval(() => {
@@ -102,7 +101,7 @@
         wordIndex++;
       }, wordInterval);
 
-      utterance.onstart = () => speaking = true;
+      utterance.onstart = () => { speaking = true; };
       utterance.onend = () => {
         speaking = false;
         mouthValue = 0;
@@ -117,10 +116,10 @@
     speechSynthesis.onvoiceschanged = () => {};
 
     // ============================================================
-    // MAIN TICKER (Head + Eyes + Lip Sync + Panel Position)
+    // MAIN TICKER (Head + Eyes + Lip Sync + TTS Panel follow)
     // ============================================================
     app.ticker.add(() => {
-      // ---- Head & Eye Follow Cursor ----
+      // Head & eye follow cursor
       const dx = (mouseX - model.x) / (app.screen.width * 0.5);
       const dy = (mouseY - model.y) / (app.screen.height * 0.5);
 
@@ -140,15 +139,16 @@
 
       model.update(1);
 
-      // ---- UPDATE TTS PANEL POSITION ----
+      // ---- TTS PANEL FOLLOW MODEL ----
       if (ttsPanel) {
-        const panelLeft = model.x + model.width * model.scale.x + 20;
-        const panelTop = model.y - ttsPanel.offsetHeight / 2;
+        const panelWidth = ttsPanel.offsetWidth || 280;
+        const panelHeight = ttsPanel.offsetHeight || 120;
 
-        // Prevent going offscreen right
-        ttsPanel.style.left = `${Math.min(panelLeft, window.innerWidth - ttsPanel.offsetWidth - 10)}px`;
-        // Prevent going offscreen top/bottom
-        ttsPanel.style.top = `${Math.max(10, Math.min(panelTop, window.innerHeight - ttsPanel.offsetHeight - 10))}px`;
+        const panelLeft = model.x + model.width * model.scale.x * (1 - model.anchor.x) + 20;
+        const panelTop = model.y - panelHeight / 2;
+
+        ttsPanel.style.left = `${Math.min(panelLeft, window.innerWidth - panelWidth - 10)}px`;
+        ttsPanel.style.top = `${Math.max(10, Math.min(panelTop, window.innerHeight - panelHeight - 10))}px`;
       }
     });
 
