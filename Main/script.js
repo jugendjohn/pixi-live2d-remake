@@ -36,7 +36,6 @@
     model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
-
     model.internalModel.settings.eyeBlink = true;
 
     console.log("✅ Model loaded");
@@ -59,6 +58,7 @@
     // ============================================================
     // TTS + SIMULATED LIP SYNC + WORD OUTPUT
     // ============================================================
+    const ttsPanel = document.getElementById("tts-panel");
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
     const ttsOutput = document.getElementById("tts-output");
@@ -102,10 +102,7 @@
         wordIndex++;
       }, wordInterval);
 
-      utterance.onstart = () => {
-        speaking = true;
-      };
-
+      utterance.onstart = () => speaking = true;
       utterance.onend = () => {
         speaking = false;
         mouthValue = 0;
@@ -120,10 +117,10 @@
     speechSynthesis.onvoiceschanged = () => {};
 
     // ============================================================
-    // MAIN TICKER (Head + Eyes + Lip Sync)
+    // MAIN TICKER (Head + Eyes + Lip Sync + Panel Position)
     // ============================================================
     app.ticker.add(() => {
-      // Head & eye follow cursor
+      // ---- Head & Eye Follow Cursor ----
       const dx = (mouseX - model.x) / (app.screen.width * 0.5);
       const dy = (mouseY - model.y) / (app.screen.height * 0.5);
 
@@ -142,6 +139,17 @@
       }
 
       model.update(1);
+
+      // ---- UPDATE TTS PANEL POSITION ----
+      if (ttsPanel) {
+        const panelLeft = model.x + model.width * model.scale.x + 20;
+        const panelTop = model.y - ttsPanel.offsetHeight / 2;
+
+        // Prevent going offscreen right
+        ttsPanel.style.left = `${Math.min(panelLeft, window.innerWidth - ttsPanel.offsetWidth - 10)}px`;
+        // Prevent going offscreen top/bottom
+        ttsPanel.style.top = `${Math.max(10, Math.min(panelTop, window.innerHeight - ttsPanel.offsetHeight - 10))}px`;
+      }
     });
 
   } catch (err) {
