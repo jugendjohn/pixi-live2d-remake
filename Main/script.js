@@ -41,6 +41,24 @@
     console.log("✅ Model loaded");
 
     // ============================================================
+    // TTS Panel Positioning (next to model)
+    // ============================================================
+    const ttsPanel = document.getElementById("tts-panel");
+
+    function updatePanelPosition() {
+      const rect = app.view.getBoundingClientRect();
+      const modelScreenX = model.x + rect.left;
+      const modelScreenY = model.y + rect.top;
+
+      // Position panel to the right of model with some margin
+      ttsPanel.style.left = `${modelScreenX + model.width / 2 + 20}px`;
+      ttsPanel.style.top = `${modelScreenY - ttsPanel.offsetHeight / 2}px`;
+    }
+
+    updatePanelPosition();
+    window.addEventListener("resize", updatePanelPosition);
+
+    // ============================================================
     // Cursor Interaction
     // ============================================================
     app.stage.eventMode = "static";
@@ -61,7 +79,6 @@
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
     const ttsOutput = document.getElementById("tts-output");
-    const ttsPanel = document.getElementById("tts-panel");
 
     let speaking = false;
     let mouthValue = 0;
@@ -90,8 +107,8 @@
       const words = text.split(/\s+/);
       ttsOutput.textContent = "";
       let wordIndex = 0;
-      const wordInterval = Math.max(150, 600 / words.length);
 
+      const wordInterval = Math.max(150, 600 / words.length);
       const wordTimer = setInterval(() => {
         if (wordIndex >= words.length) {
           clearInterval(wordTimer);
@@ -101,7 +118,7 @@
         wordIndex++;
       }, wordInterval);
 
-      utterance.onstart = () => { speaking = true; };
+      utterance.onstart = () => speaking = true;
       utterance.onend = () => {
         speaking = false;
         mouthValue = 0;
@@ -112,11 +129,11 @@
       speechSynthesis.speak(utterance);
     });
 
-    // Ensure voices load on first interaction
+    // Ensure voices load
     speechSynthesis.onvoiceschanged = () => {};
 
     // ============================================================
-    // MAIN TICKER (Head + Eyes + Lip Sync + TTS Panel follow)
+    // MAIN TICKER (Head + Eyes + Lip Sync)
     // ============================================================
     app.ticker.add(() => {
       // Head & eye follow cursor
@@ -138,18 +155,7 @@
       }
 
       model.update(1);
-
-      // ---- TTS PANEL FOLLOW MODEL ----
-      if (ttsPanel) {
-        const panelWidth = ttsPanel.offsetWidth || 280;
-        const panelHeight = ttsPanel.offsetHeight || 120;
-
-        const panelLeft = model.x + model.width * model.scale.x * (1 - model.anchor.x) + 20;
-        const panelTop = model.y - panelHeight / 2;
-
-        ttsPanel.style.left = `${Math.min(panelLeft, window.innerWidth - panelWidth - 10)}px`;
-        ttsPanel.style.top = `${Math.max(10, Math.min(panelTop, window.innerHeight - panelHeight - 10))}px`;
-      }
+      updatePanelPosition(); // keep panel next to model
     });
 
   } catch (err) {
