@@ -118,17 +118,18 @@
     ticker.start();
 
     // ============================================================
-    // TTS + REAL Audio Lip Sync
+    // TTS + REAL Audio Lip Sync + Word Output
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
+    const ttsOutput = document.getElementById("tts-output");
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const analyser = audioCtx.createAnalyser();
     analyser.fftSize = 512;
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-    ttsButton.addEventListener("click", async () => {
+    ttsButton.addEventListener("click", () => {
       const text = ttsInput.value.trim();
       if (!text) return;
 
@@ -136,12 +137,30 @@
       utterance.pitch = 1;
       utterance.rate = 1;
 
-      // Female voice selection
+      // Female voice
       const voices = speechSynthesis.getVoices();
       const femaleVoice = voices.find(v =>
         /female|zira|samantha|victoria|susan/i.test(v.name)
       );
       if (femaleVoice) utterance.voice = femaleVoice;
+
+      // -------- WORD OUTPUT --------
+      const words = text.split(/\s+/);
+      ttsOutput.textContent = "";
+      let wordIndex = 0;
+      const wordInterval = Math.max(
+        120,
+        (utterance.rate * 600) / words.length
+      );
+
+      const wordTimer = setInterval(() => {
+        if (wordIndex >= words.length) {
+          clearInterval(wordTimer);
+          return;
+        }
+        ttsOutput.textContent += words[wordIndex] + " ";
+        wordIndex++;
+      }, wordInterval);
 
       let lipSyncActive = false;
 
@@ -159,9 +178,6 @@
 
           const mouthOpen = Math.min(volume / 80, 1);
           core.setParameterValueById("ParamMouthOpenY", mouthOpen);
-
-          model.update(1);
-          app.renderer.render(app.stage);
         });
 
         lipTicker.start();
@@ -169,6 +185,7 @@
         utterance.onend = () => {
           lipSyncActive = false;
           core.setParameterValueById("ParamMouthOpenY", 0);
+          clearInterval(wordTimer);
           lipTicker.stop();
         };
       };
