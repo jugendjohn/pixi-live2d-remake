@@ -21,60 +21,68 @@
       height: 100vh !important;
     }
 
-    /* TTS Box styling */
-    #tts-container {
+    /* Redesigned TTS Panel */
+    #tts-panel {
       position: absolute;
-      top: 50%; /* vertically centered relative to model */
-      left: calc(25% + 150px);
-      transform: translateY(-50%);
-      width: 250px;
-      background: rgba(255, 255, 255, 0.9);
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      width: 360px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
       z-index: 10;
     }
 
-    #tts-container input {
-      width: 100%;
-      padding: 6px;
-      margin-bottom: 8px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      font-size: 14px;
+    .tts-header {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2b2b2b;
+      text-align: center;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e6e6e6;
     }
 
-    #tts-container button {
+    #tts-input {
       width: 100%;
-      padding: 6px;
-      border-radius: 4px;
-      border: none;
-      background-color: #4CAF50;
-      color: white;
+      min-height: 100px;
+      resize: none;
+      border-radius: 10px;
+      border: 1px solid #d0d0d0;
+      padding: 12px;
       font-size: 14px;
+      outline: none;
+    }
+
+    #tts-button {
+      height: 44px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg,#6b8cff,#4f6cff);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
       cursor: pointer;
     }
 
-    #tts-container button:hover {
-      background-color: #45a049;
-    }
-
     #tts-output {
-      margin-top: 8px;
-      min-height: 40px;
-      padding: 6px;
-      border-radius: 4px;
-      background: #f0f0f0;
+      min-height: 60px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f7f8fa;
       font-size: 14px;
       color: #333;
-      word-wrap: break-word;
+      line-height: 1.4;
+      border: 1px solid #e0e0e0;
     }
   </style>
 </head>
 <body>
-  <!-- TTS Input Box beside model -->
-  <div id="tts-container">
-    <input type="text" id="tts-input" placeholder="Enter text to speak">
+  <!-- TTS Panel -->
+  <div id="tts-panel">
+    <div class="tts-header">Text-to-Speech</div>
+    <textarea id="tts-input" placeholder="Enter text to speak"></textarea>
     <button id="tts-button">Speak</button>
     <div id="tts-output"></div>
   </div>
