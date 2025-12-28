@@ -26,15 +26,56 @@
     model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
-
     model.internalModel.settings.eyeBlink = true;
+
     console.log("✅ Model loaded");
 
-    // ---------------- Cursor Tracking ----------------
+    // ---------------- Cursor Interaction ----------------
+    app.stage.eventMode = "static";
+    app.stage.hitArea = app.screen;
+
+    let dragging = false;
+    let dragX = 0;
+    let dragY = 0;
+
+    app.stage.on("pointerdown", (e) => {
+      const x = e.global.x;
+      const y = e.global.y;
+      dragging = true;
+
+      // Optional: change expression on head click
+      if (model.hitTest("Head", x, y)) {
+        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
+        if (expressions && expressions.size > 0) {
+          const keys = [...expressions.keys()];
+          model.expression(keys[Math.floor(Math.random() * keys.length)]);
+        }
+        return;
+      }
+    });
+
+    app.stage.on("pointermove", (e) => {
+      if (!dragging) return;
+      dragX = (e.global.x - model.x) / (model.width * 0.5);
+      dragY = (e.global.y - model.y) / (model.height * 0.5);
+      dragX = Math.max(-1, Math.min(1, dragX));
+      dragY = Math.max(-1, Math.min(1, dragY));
+    });
+
+    const stopDrag = () => {
+      dragging = false;
+      dragX = 0;
+      dragY = 0;
+    };
+
+    app.stage.on("pointerup", stopDrag);
+    app.stage.on("pointerupoutside", stopDrag);
+
     let mouseX = model.x;
     let mouseY = model.y;
 
     window.addEventListener("mousemove", (e) => {
+      if (dragging) return;
       const rect = app.view.getBoundingClientRect();
       mouseX = e.clientX - rect.left;
       mouseY = e.clientY - rect.top;
@@ -65,7 +106,7 @@
       const voice = getFemaleVoice();
       if (voice) utterance.voice = voice;
 
-      // Word-by-word output
+      // Word output
       const words = text.split(/\s+/);
       ttsOutput.textContent = "";
       let wordIndex = 0;
@@ -80,10 +121,7 @@
         wordIndex++;
       }, wordInterval);
 
-      utterance.onstart = () => {
-        speaking = true;
-      };
-
+      utterance.onstart = () => { speaking = true; };
       utterance.onend = () => {
         speaking = false;
         mouthValue = 0;
@@ -99,9 +137,8 @@
     // ---------------- PIXI TICKER ----------------
     const ticker = new PIXI.Ticker();
     ticker.add(() => {
-      // Head & eyes follow cursor
-      const dx = (mouseX - model.x) / (app.screen.width * 0.5);
-      const dy = (mouseY - model.y) / (app.screen.height * 0.5);
+      const dx = dragging ? dragX : (mouseX - model.x) / (app.screen.width * 0.5);
+      const dy = dragging ? dragY : (mouseY - model.y) / (app.screen.height * 0.5);
 
       core.setParameterValueById("ParamAngleX", dx * 30);
       core.setParameterValueById("ParamAngleY", dy * 30);
@@ -110,7 +147,7 @@
       core.setParameterValueById("ParamEyeBallX", dx);
       core.setParameterValueById("ParamEyeBallY", dy);
 
-      // Simulated lip-sync
+      // Simulated lip sync
       if (speaking) {
         mouthValue += (Math.random() * 0.8 - mouthValue) * 0.35;
         mouthValue = Math.max(0, Math.min(1, mouthValue));
