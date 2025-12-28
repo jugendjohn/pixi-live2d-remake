@@ -26,7 +26,6 @@
     model.x = app.screen.width * 0.25;
     model.y = app.screen.height / 2;
 
-    // 🔹 enable interaction on model
     model.eventMode = "static";
     model.cursor = "pointer";
 
@@ -74,13 +73,11 @@
       const x = e.global.x;
       const y = e.global.y;
 
-      // 🔹 cursor interaction (when not dragging)
       if (!dragging) {
         model.focus(x, y);
         return;
       }
 
-      // dragging logic
       dragX = (x - model.x) / (model.width * 0.5);
       dragY = (y - model.y) / (model.height * 0.5);
       dragX = Math.max(-1, Math.min(1, dragX));
@@ -117,7 +114,7 @@
     ticker.start();
 
     // ============================================================
-    // TTS + REAL Audio Lip Sync + Word Output
+    // TTS + Word Output + Lip Sync (Simplified & Female Voice Fix)
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
@@ -128,53 +125,52 @@
     analyser.fftSize = 512;
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
+    // Ensure voices are loaded before first TTS
+    let voices = [];
+    speechSynthesis.onvoiceschanged = () => {
+      voices = speechSynthesis.getVoices();
+    };
+
+    function getFemaleVoice() {
+      return voices.find(v =>
+        /female|zira|samantha|victoria|susan/i.test(v.name)
+      );
+    }
+
     ttsButton.addEventListener("click", () => {
       const text = ttsInput.value.trim();
       if (!text) return;
 
+      speechSynthesis.cancel();
+
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.pitch = 1;
       utterance.rate = 1;
+      utterance.voice = getFemaleVoice() || null;
 
-      const voices = speechSynthesis.getVoices();
-      const femaleVoice = voices.find(v =>
-        /female|zira|samantha|victoria|susan/i.test(v.name)
-      );
-      if (femaleVoice) utterance.voice = femaleVoice;
-
+      // Word output
       const words = text.split(/\s+/);
       ttsOutput.textContent = "";
       let wordIndex = 0;
-
       const wordTimer = setInterval(() => {
-        if (wordIndex >= words.length) {
-          clearInterval(wordTimer);
-          return;
-        }
+        if (wordIndex >= words.length) return clearInterval(wordTimer);
         ttsOutput.textContent += words[wordIndex] + " ";
         wordIndex++;
       }, 150);
 
+      // Lip sync
       let lipSyncActive = false;
-
       utterance.onstart = () => {
         lipSyncActive = true;
 
         const lipTicker = new PIXI.Ticker();
         lipTicker.add(() => {
           if (!lipSyncActive) return;
-
           analyser.getByteFrequencyData(dataArray);
           let sum = 0;
           for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-          const volume = sum / dataArray.length;
-
-          core.setParameterValueById(
-            "ParamMouthOpenY",
-            Math.min(volume / 80, 1)
-          );
+          core.setParameterValueById("ParamMouthOpenY", Math.min(sum / dataArray.length / 80, 1));
         });
-
         lipTicker.start();
 
         utterance.onend = () => {
