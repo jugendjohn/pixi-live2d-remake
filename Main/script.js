@@ -26,6 +26,10 @@
     model.x = app.screen.width * 0.25;
     model.y = app.screen.height / 2;
 
+    // 🔹 enable interaction on model
+    model.eventMode = "static";
+    model.cursor = "pointer";
+
     app.stage.addChild(model);
 
     model.internalModel.settings.eyeBlink = true;
@@ -67,9 +71,18 @@
     });
 
     app.stage.on("pointermove", (e) => {
-      if (!dragging) return;
-      dragX = (e.global.x - model.x) / (model.width * 0.5);
-      dragY = (e.global.y - model.y) / (model.height * 0.5);
+      const x = e.global.x;
+      const y = e.global.y;
+
+      // 🔹 cursor interaction (when not dragging)
+      if (!dragging) {
+        model.focus(x, y);
+        return;
+      }
+
+      // dragging logic
+      dragX = (x - model.x) / (model.width * 0.5);
+      dragY = (y - model.y) / (model.height * 0.5);
       dragX = Math.max(-1, Math.min(1, dragX));
       dragY = Math.max(-1, Math.min(1, dragY));
     });
@@ -83,27 +96,13 @@
     app.stage.on("pointerup", stopDrag);
     app.stage.on("pointerupoutside", stopDrag);
 
-    let mouseX = model.x;
-    let mouseY = model.y;
-
-    window.addEventListener("mousemove", (e) => {
-      if (dragging) return;
-      const rect = app.view.getBoundingClientRect();
-      mouseX = e.clientX - rect.left;
-      mouseY = e.clientY - rect.top;
-    });
-
     // ============================================================
-    // Main Ticker
+    // Main Ticker (body follow / subtle motion)
     // ============================================================
     const ticker = new PIXI.Ticker();
     ticker.add(() => {
-      const dx = dragging
-        ? dragX
-        : (mouseX - model.x) / (app.screen.width * 0.5);
-      const dy = dragging
-        ? dragY
-        : (mouseY - model.y) / (app.screen.height * 0.5);
+      const dx = dragging ? dragX : 0;
+      const dy = dragging ? dragY : 0;
 
       core.setParameterValueById("ParamAngleX", dx * 30);
       core.setParameterValueById("ParamAngleY", dy * 30);
@@ -137,21 +136,15 @@
       utterance.pitch = 1;
       utterance.rate = 1;
 
-      // Female voice
       const voices = speechSynthesis.getVoices();
       const femaleVoice = voices.find(v =>
         /female|zira|samantha|victoria|susan/i.test(v.name)
       );
       if (femaleVoice) utterance.voice = femaleVoice;
 
-      // -------- WORD OUTPUT --------
       const words = text.split(/\s+/);
       ttsOutput.textContent = "";
       let wordIndex = 0;
-      const wordInterval = Math.max(
-        120,
-        (utterance.rate * 600) / words.length
-      );
 
       const wordTimer = setInterval(() => {
         if (wordIndex >= words.length) {
@@ -160,7 +153,7 @@
         }
         ttsOutput.textContent += words[wordIndex] + " ";
         wordIndex++;
-      }, wordInterval);
+      }, 150);
 
       let lipSyncActive = false;
 
@@ -176,8 +169,10 @@
           for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
           const volume = sum / dataArray.length;
 
-          const mouthOpen = Math.min(volume / 80, 1);
-          core.setParameterValueById("ParamMouthOpenY", mouthOpen);
+          core.setParameterValueById(
+            "ParamMouthOpenY",
+            Math.min(volume / 80, 1)
+          );
         });
 
         lipTicker.start();
