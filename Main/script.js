@@ -41,24 +41,6 @@
     console.log("✅ Model loaded");
 
     // ============================================================
-    // TTS Panel Positioning (next to model)
-    // ============================================================
-    const ttsPanel = document.getElementById("tts-panel");
-
-    function updatePanelPosition() {
-      const rect = app.view.getBoundingClientRect();
-      const modelScreenX = model.x + rect.left;
-      const modelScreenY = model.y + rect.top;
-
-      // Position panel to the right of model with some margin
-      ttsPanel.style.left = `${modelScreenX + model.width / 2 + 20}px`;
-      ttsPanel.style.top = `${modelScreenY - ttsPanel.offsetHeight / 2}px`;
-    }
-
-    updatePanelPosition();
-    window.addEventListener("resize", updatePanelPosition);
-
-    // ============================================================
     // Cursor Interaction
     // ============================================================
     app.stage.eventMode = "static";
@@ -76,6 +58,7 @@
     // ============================================================
     // TTS + SIMULATED LIP SYNC + WORD OUTPUT
     // ============================================================
+    const ttsPanel = document.getElementById("tts-panel");
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
     const ttsOutput = document.getElementById("tts-output");
@@ -109,6 +92,7 @@
       let wordIndex = 0;
 
       const wordInterval = Math.max(150, 600 / words.length);
+
       const wordTimer = setInterval(() => {
         if (wordIndex >= words.length) {
           clearInterval(wordTimer);
@@ -129,14 +113,14 @@
       speechSynthesis.speak(utterance);
     });
 
-    // Ensure voices load
+    // Ensure voices load on first interaction
     speechSynthesis.onvoiceschanged = () => {};
 
     // ============================================================
-    // MAIN TICKER (Head + Eyes + Lip Sync)
+    // MAIN TICKER (Head + Eyes + Lip Sync + Panel Position)
     // ============================================================
     app.ticker.add(() => {
-      // Head & eye follow cursor
+      // ---- Head & Eye Follow Cursor ----
       const dx = (mouseX - model.x) / (app.screen.width * 0.5);
       const dy = (mouseY - model.y) / (app.screen.height * 0.5);
 
@@ -155,7 +139,17 @@
       }
 
       model.update(1);
-      updatePanelPosition(); // keep panel next to model
+
+      // ---- UPDATE TTS PANEL POSITION ----
+      if (ttsPanel) {
+        const panelLeft = model.x + model.width * model.scale.x + 20;
+        const panelTop = model.y - ttsPanel.offsetHeight / 2;
+
+        // Prevent going offscreen right
+        ttsPanel.style.left = `${Math.min(panelLeft, window.innerWidth - ttsPanel.offsetWidth - 10)}px`;
+        // Prevent going offscreen top/bottom
+        ttsPanel.style.top = `${Math.max(10, Math.min(panelTop, window.innerHeight - ttsPanel.offsetHeight - 10))}px`;
+      }
     });
 
   } catch (err) {
