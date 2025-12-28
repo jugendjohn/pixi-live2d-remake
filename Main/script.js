@@ -1,18 +1,10 @@
 (async () => {
-  if (typeof PIXI === "undefined") {
-    console.error("❌ PIXI NOT LOADED");
-    return;
-  }
-  if (!PIXI.live2d?.Live2DModel) {
-    console.error("❌ pixi-live2d-display NOT LOADED");
-    return;
-  }
+  if (typeof PIXI === "undefined") return console.error("❌ PIXI NOT LOADED");
+  if (!PIXI.live2d?.Live2DModel) return console.error("❌ pixi-live2d-display NOT LOADED");
 
   const { Live2DModel } = PIXI.live2d;
 
-  // ============================================================
-  // PIXI APP
-  // ============================================================
+  // ---------------- PIXI APP ----------------
   const app = new PIXI.Application({
     background: "#f4f3f2",
     resizeTo: window,
@@ -26,9 +18,7 @@
     const model = await Live2DModel.from(MODEL_PATH);
     const core = model.internalModel.coreModel;
 
-    // ============================================================
-    // Placement & Scale
-    // ============================================================
+    // ---------------- Placement & Scale ----------------
     model.anchor.set(0.5);
     const scaleFactor = (app.screen.height / model.height) * 0.9;
     model.scale.set(scaleFactor);
@@ -36,34 +26,11 @@
     model.y = app.screen.height / 2;
 
     app.stage.addChild(model);
-    model.internalModel.settings.eyeBlink = true;
 
+    model.internalModel.settings.eyeBlink = true;
     console.log("✅ Model loaded");
 
-    // ============================================================
-    // TTS Panel Positioning (next to model)
-    // ============================================================
-    const ttsPanel = document.getElementById("tts-panel");
-
-    function updatePanelPosition() {
-      const rect = app.view.getBoundingClientRect();
-      const modelScreenX = model.x + rect.left;
-      const modelScreenY = model.y + rect.top;
-
-      // Position panel to the right of model with some margin
-      ttsPanel.style.left = `${modelScreenX + model.width / 2 + 20}px`;
-      ttsPanel.style.top = `${modelScreenY - ttsPanel.offsetHeight / 2}px`;
-    }
-
-    updatePanelPosition();
-    window.addEventListener("resize", updatePanelPosition);
-
-    // ============================================================
-    // Cursor Interaction
-    // ============================================================
-    app.stage.eventMode = "static";
-    app.stage.hitArea = app.screen;
-
+    // ---------------- Cursor Tracking ----------------
     let mouseX = model.x;
     let mouseY = model.y;
 
@@ -73,9 +40,7 @@
       mouseY = e.clientY - rect.top;
     });
 
-    // ============================================================
-    // TTS + SIMULATED LIP SYNC + WORD OUTPUT
-    // ============================================================
+    // ---------------- TTS + WORD OUTPUT ----------------
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
     const ttsOutput = document.getElementById("tts-output");
@@ -85,9 +50,7 @@
 
     function getFemaleVoice() {
       const voices = speechSynthesis.getVoices();
-      return voices.find(v =>
-        /female|zira|samantha|victoria|susan/i.test(v.name)
-      );
+      return voices.find(v => /female|zira|samantha|victoria|susan/i.test(v.name));
     }
 
     ttsButton.addEventListener("click", () => {
@@ -95,7 +58,6 @@
       if (!text) return;
 
       speechSynthesis.cancel();
-
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.pitch = 1;
       utterance.rate = 1;
@@ -103,12 +65,12 @@
       const voice = getFemaleVoice();
       if (voice) utterance.voice = voice;
 
-      // -------- WORD OUTPUT --------
+      // Word-by-word output
       const words = text.split(/\s+/);
       ttsOutput.textContent = "";
       let wordIndex = 0;
-
       const wordInterval = Math.max(150, 600 / words.length);
+
       const wordTimer = setInterval(() => {
         if (wordIndex >= words.length) {
           clearInterval(wordTimer);
@@ -118,7 +80,10 @@
         wordIndex++;
       }, wordInterval);
 
-      utterance.onstart = () => speaking = true;
+      utterance.onstart = () => {
+        speaking = true;
+      };
+
       utterance.onend = () => {
         speaking = false;
         mouthValue = 0;
@@ -129,14 +94,12 @@
       speechSynthesis.speak(utterance);
     });
 
-    // Ensure voices load
     speechSynthesis.onvoiceschanged = () => {};
 
-    // ============================================================
-    // MAIN TICKER (Head + Eyes + Lip Sync)
-    // ============================================================
-    app.ticker.add(() => {
-      // Head & eye follow cursor
+    // ---------------- PIXI TICKER ----------------
+    const ticker = new PIXI.Ticker();
+    ticker.add(() => {
+      // Head & eyes follow cursor
       const dx = (mouseX - model.x) / (app.screen.width * 0.5);
       const dy = (mouseY - model.y) / (app.screen.height * 0.5);
 
@@ -147,7 +110,7 @@
       core.setParameterValueById("ParamEyeBallX", dx);
       core.setParameterValueById("ParamEyeBallY", dy);
 
-      // ---- SIMULATED LIP SYNC ----
+      // Simulated lip-sync
       if (speaking) {
         mouthValue += (Math.random() * 0.8 - mouthValue) * 0.35;
         mouthValue = Math.max(0, Math.min(1, mouthValue));
@@ -155,8 +118,9 @@
       }
 
       model.update(1);
-      updatePanelPosition(); // keep panel next to model
+      app.renderer.render(app.stage);
     });
+    ticker.start();
 
   } catch (err) {
     console.error("❌ MODEL LOAD ERROR:", err);
