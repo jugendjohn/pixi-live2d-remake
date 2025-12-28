@@ -25,6 +25,7 @@
     #tts-panel {
       position: absolute;
       top: 50%;
+      left: 30%; /* Shifted to the right of the model at ~25% */
       transform: translateY(-50%);
       width: 400px;
       background: #ffffff;
@@ -106,17 +107,5 @@
   <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
   <!-- Your script -->
   <script src="Main/script.js"></script>
-
-  <script>
-    // Optional: position the TTS panel dynamically to the right of the model
-    const ttsPanel = document.getElementById('tts-panel');
-
-    function updatePanelPosition(modelX, modelWidth) {
-      ttsPanel.style.left = `${modelX + modelWidth / 2 + 20}px`;
-    }
-
-    // Use this function in your script.js main ticker to continuously update the panel position
-    window.updateTTSPanelPosition = updatePanelPosition;
-  </script>
 </body>
 </html>
