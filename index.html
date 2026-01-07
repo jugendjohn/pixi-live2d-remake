@@ -25,7 +25,7 @@
     #tts-panel {
       position: absolute;
       top: 50%;
-      left: 35%; /* shifted to right of model (model ~25% width) */
+      left: 35%;
       transform: translateY(-50%);
       width: 400px;
       background: #ffffff;
@@ -36,7 +36,6 @@
       flex-direction: column;
       gap: 16px;
       z-index: 10;
-      font-family: "Segoe UI", sans-serif;
     }
 
     .tts-header {
@@ -69,11 +68,6 @@
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    #tts-button:hover {
-      background: linear-gradient(135deg,#5a7aff,#3f5cff);
     }
 
     #tts-output {
@@ -85,11 +79,110 @@
       color: #333;
       line-height: 1.5;
       border: 1px solid #e0e0e0;
-      overflow-wrap: break-word;
+    }
+
+    /* ========================= */
+    /* Patients Popup (Scoped)   */
+    /* ========================= */
+
+    #patientsPopupBtn {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: none;
+      background: #5b7cff;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    #patientsModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .patients-hidden {
+      display: none;
+    }
+
+    .patients-panel {
+      width: 720px;
+      height: 420px;
+      background: #fff;
+      border-radius: 18px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .patients-header {
+      padding: 14px 18px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+    }
+
+    .patients-body {
+      flex: 1;
+      display: flex;
+    }
+
+    .patients-list {
+      width: 40%;
+      padding: 14px;
+      border-right: 1px solid #eee;
+    }
+
+    .patients-list ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .patients-list li {
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .patients-list li:hover {
+      background: #eef2ff;
+    }
+
+    .patients-add {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+    }
+
+    .patients-add input {
+      flex: 1;
+      padding: 6px;
+    }
+
+    .patients-details {
+      width: 60%;
+      padding: 14px;
+    }
+
+    .patient-rx {
+      background: #f6f7fa;
+      padding: 10px;
+      border-radius: 10px;
+      margin-bottom: 8px;
     }
   </style>
 </head>
+
 <body>
+
   <!-- TTS Panel -->
   <div id="tts-panel">
     <div class="tts-header">Virtual Companion</div>
@@ -98,17 +191,114 @@
     <div id="tts-output"></div>
   </div>
 
-  <!-- PIXI.js library -->
+  <!-- Patients Button -->
+  <button id="patientsPopupBtn">Patients</button>
+
+  <!-- Patients Popup -->
+  <div id="patientsModal" class="patients-hidden">
+    <div class="patients-panel">
+      <div class="patients-header">
+        <span>Patient Records</span>
+        <button id="closePatients">✕</button>
+      </div>
+
+      <div class="patients-body">
+        <div class="patients-list">
+          <h4>Patients</h4>
+          <ul id="patientsList"></ul>
+
+          <div class="patients-add">
+            <input id="patientId" placeholder="ID">
+            <input id="patientName" placeholder="Name">
+            <button id="addPatientBtn">Add</button>
+          </div>
+        </div>
+
+        <div class="patients-details">
+          <h4>Prescriptions</h4>
+          <div id="patientDetails">Select a patient</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIXI.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
-  <!-- Live2D Cubism Core -->
   <script src="Core/live2dcubismcore.min.js"></script>
-  <!-- Live2D Display plugin -->
   <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
-  <!-- Your script -->
+
+  <!-- Your Live2D Script -->
   <script src="Main/script.js"></script>
+
+  <!-- Patients Popup Logic (Isolated) -->
+  <script>
+    (() => {
+      const data = {
+        patients: [
+          {
+            id: "001",
+            name: "Amir",
+            prescriptions: [
+              { medicine: "Paracetamol 500mg", time_given: "2025-10-22 09:30" }
+            ]
+          },
+          {
+            id: "002",
+            name: "John",
+            prescriptions: [
+              { medicine: "Amlodipine 5mg", time_given: "2025-10-22 08:45" }
+            ]
+          }
+        ]
+      };
+
+      const modal = document.getElementById("patientsModal");
+      const list = document.getElementById("patientsList");
+      const details = document.getElementById("patientDetails");
+
+      document.getElementById("patientsPopupBtn").onclick =
+        () => modal.classList.remove("patients-hidden");
+
+      document.getElementById("closePatients").onclick =
+        () => modal.classList.add("patients-hidden");
+
+      function render() {
+        list.innerHTML = "";
+        data.patients.forEach(p => {
+          const li = document.createElement("li");
+          li.textContent = `${p.id} – ${p.name}`;
+          li.onclick = () => show(p);
+          list.appendChild(li);
+        });
+      }
+
+      function show(p) {
+        details.innerHTML = "";
+        if (!p.prescriptions.length) {
+          details.textContent = "No prescriptions";
+          return;
+        }
+        p.prescriptions.forEach(rx => {
+          const div = document.createElement("div");
+          div.className = "patient-rx";
+          div.innerHTML = `<strong>${rx.medicine}</strong><br>${rx.time_given}`;
+          details.appendChild(div);
+        });
+      }
+
+      document.getElementById("addPatientBtn").onclick = () => {
+        const id = patientId.value.trim();
+        const name = patientName.value.trim();
+        if (!id || !name) return;
+        data.patients.push({ id, name, prescriptions: [] });
+        patientId.value = patientName.value = "";
+        render();
+      };
+
+      render();
+    })();
+  </script>
+
 </body>
 </html>
-
-
-
