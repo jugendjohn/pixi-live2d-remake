@@ -52,8 +52,7 @@
       dragging = true;
 
       if (model.hitTest("Head", x, y)) {
-        const expressions =
-          model.internalModel.motionManager?.expressionManager?._motions;
+        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
         if (expressions && expressions.size > 0) {
           const keys = [...expressions.keys()];
           model.expression(keys[Math.floor(Math.random() * keys.length)]);
@@ -94,7 +93,7 @@
     app.stage.on("pointerupoutside", stopDrag);
 
     // ============================================================
-    // Main Ticker
+    // Main Ticker (body follow / subtle motion)
     // ============================================================
     const ticker = new PIXI.Ticker();
     ticker.add(() => {
@@ -114,12 +113,13 @@
     ticker.start();
 
     // ============================================================
-    // TTS + Word Output + ✅ FIXED LIP SYNC
+    // TTS + Word Output + Simulated Lip Sync (Duration-based)
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
     const ttsOutput = document.getElementById("tts-output");
 
+    // Ensure voices are loaded before first TTS
     let voices = [];
     speechSynthesis.onvoiceschanged = () => {
       voices = speechSynthesis.getVoices();
@@ -131,19 +131,6 @@
       );
     }
 
-    let mouthValue = 0;
-    let speaking = false;
-
-    // Smooth mouth animation
-    const mouthTicker = new PIXI.Ticker();
-    mouthTicker.add(() => {
-      if (!speaking) {
-        mouthValue *= 0.8;
-      }
-      core.setParameterValueById("ParamMouthOpenY", mouthValue);
-    });
-    mouthTicker.start();
-
     ttsButton.addEventListener("click", () => {
       const text = ttsInput.value.trim();
       if (!text) return;
@@ -151,9 +138,9 @@
       speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.voice = getFemaleVoice() || null;
-      utterance.rate = 1;
       utterance.pitch = 1;
+      utterance.rate = 1;
+      utterance.voice = getFemaleVoice() || null;
 
       // Word output
       const words = text.split(/\s+/);
@@ -165,20 +152,27 @@
         wordIndex++;
       }, 150);
 
+      // Simulated lip sync (based on TTS duration)
+      let lipTicker = null;
       utterance.onstart = () => {
-        speaking = true;
-      };
+        const estimatedDuration = Math.max(800, text.length * 60);
+        const startTime = performance.now();
 
-      // 🔑 This is the FIX — drive lips from speech events
-      utterance.onboundary = (e) => {
-        if (e.name === "word") {
-          mouthValue = 0.6 + Math.random() * 0.4;
-        }
+        lipTicker = new PIXI.Ticker();
+        lipTicker.add(() => {
+          const elapsed = performance.now() - startTime;
+          const mouth = Math.abs(Math.sin(elapsed * 0.02)) * 0.6 + 0.2;
+          core.setParameterValueById("ParamMouthOpenY", Math.min(mouth, 1));
+        });
+        lipTicker.start();
       };
 
       utterance.onend = () => {
-        speaking = false;
-        mouthValue = 0;
+        if (lipTicker) {
+          lipTicker.stop();
+          lipTicker = null;
+        }
+        core.setParameterValueById("ParamMouthOpenY", 0);
         clearInterval(wordTimer);
       };
 
