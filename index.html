@@ -21,7 +21,7 @@
       height: 100vh !important;
     }
 
-    /* Professional TTS Panel */
+    /* TTS Panel (unchanged) */
     #tts-panel {
       position: absolute;
       top: 50%;
@@ -41,22 +41,16 @@
     .tts-header {
       font-size: 20px;
       font-weight: 700;
-      color: #222;
       text-align: center;
-      padding-bottom: 8px;
       border-bottom: 1px solid #e6e6e6;
+      padding-bottom: 8px;
     }
 
-    #tts-input {
-      width: 100%;
-      min-height: 120px;
-      resize: none;
+    #tts-input, #tts-output {
       border-radius: 12px;
-      border: 1px solid #ccc;
       padding: 14px;
-      font-size: 16px;
-      outline: none;
-      box-sizing: border-box;
+      font-size: 15px;
+      border: 1px solid #ccc;
     }
 
     #tts-button {
@@ -70,22 +64,11 @@
       cursor: pointer;
     }
 
-    #tts-output {
-      min-height: 80px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: #f7f8fa;
-      font-size: 15px;
-      color: #333;
-      line-height: 1.5;
-      border: 1px solid #e0e0e0;
-    }
-
     /* ========================= */
-    /* Patients Popup (Scoped)   */
+    /* Patients Popup            */
     /* ========================= */
 
-    #patientsPopupBtn {
+    #patientsBtn {
       position: absolute;
       bottom: 24px;
       left: 24px;
@@ -103,14 +86,14 @@
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.45);
-      display: flex;
+      display: none;
       align-items: center;
       justify-content: center;
       z-index: 100;
     }
 
-    .patients-hidden {
-      display: none;
+    #patientsModal.show {
+      display: flex;
     }
 
     .patients-panel {
@@ -192,10 +175,10 @@
   </div>
 
   <!-- Patients Button -->
-  <button id="patientsPopupBtn">Patients</button>
+  <button id="patientsBtn">Patients</button>
 
-  <!-- Patients Popup -->
-  <div id="patientsModal" class="patients-hidden">
+  <!-- Patients Modal -->
+  <div id="patientsModal">
     <div class="patients-panel">
       <div class="patients-header">
         <span>Patient Records</span>
@@ -208,9 +191,8 @@
           <ul id="patientsList"></ul>
 
           <div class="patients-add">
-            <input id="patientId" placeholder="ID">
-            <input id="patientName" placeholder="Name">
-            <button id="addPatientBtn">Add</button>
+            <input id="patientName" placeholder="Patient name">
+            <button id="addPatient">Add</button>
           </div>
         </div>
 
@@ -222,46 +204,47 @@
     </div>
   </div>
 
-  <!-- PIXI.js -->
+  <!-- PIXI / Live2D -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
   <script src="Core/live2dcubismcore.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
-
-  <!-- Your Live2D Script -->
   <script src="Main/script.js"></script>
 
-  <!-- Patients Popup Logic (Isolated) -->
+  <!-- Patients Logic -->
   <script>
     (() => {
+      const modal = document.getElementById("patientsModal");
+      const list = document.getElementById("patientsList");
+      const details = document.getElementById("patientDetails");
+      const nameInput = document.getElementById("patientName");
+
+      let idCounter = 3;
+
       const data = {
         patients: [
           {
             id: "001",
             name: "Amir",
-            prescriptions: [
-              { medicine: "Paracetamol 500mg", time_given: "2025-10-22 09:30" }
-            ]
+            prescriptions: [{ medicine: "Paracetamol 500mg", time_given: "2025-10-22 09:30" }]
           },
           {
             id: "002",
             name: "John",
-            prescriptions: [
-              { medicine: "Amlodipine 5mg", time_given: "2025-10-22 08:45" }
-            ]
+            prescriptions: [{ medicine: "Amlodipine 5mg", time_given: "2025-10-22 08:45" }]
           }
         ]
       };
 
-      const modal = document.getElementById("patientsModal");
-      const list = document.getElementById("patientsList");
-      const details = document.getElementById("patientDetails");
-
-      document.getElementById("patientsPopupBtn").onclick =
-        () => modal.classList.remove("patients-hidden");
+      document.getElementById("patientsBtn").onclick =
+        () => modal.classList.add("show");
 
       document.getElementById("closePatients").onclick =
-        () => modal.classList.add("patients-hidden");
+        () => modal.classList.remove("show");
+
+      modal.onclick = e => {
+        if (e.target === modal) modal.classList.remove("show");
+      };
 
       function render() {
         list.innerHTML = "";
@@ -275,10 +258,6 @@
 
       function show(p) {
         details.innerHTML = "";
-        if (!p.prescriptions.length) {
-          details.textContent = "No prescriptions";
-          return;
-        }
         p.prescriptions.forEach(rx => {
           const div = document.createElement("div");
           div.className = "patient-rx";
@@ -287,12 +266,15 @@
         });
       }
 
-      document.getElementById("addPatientBtn").onclick = () => {
-        const id = patientId.value.trim();
-        const name = patientName.value.trim();
-        if (!id || !name) return;
-        data.patients.push({ id, name, prescriptions: [] });
-        patientId.value = patientName.value = "";
+      document.getElementById("addPatient").onclick = () => {
+        const name = nameInput.value.trim();
+        if (!name) return;
+        data.patients.push({
+          id: String(idCounter++).padStart(3, "0"),
+          name,
+          prescriptions: []
+        });
+        nameInput.value = "";
         render();
       };
 
