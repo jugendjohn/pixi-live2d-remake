@@ -54,13 +54,13 @@
       font-size: 16px;
     }
 
-    #tts-button, #patient-btn {
-      height: 48px;
+    #tts-button, #toggle-patients {
+      height: 44px;
       border-radius: 12px;
       border: none;
       background: linear-gradient(135deg,#6b8cff,#4f6cff);
       color: #fff;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: 600;
       cursor: pointer;
     }
@@ -73,73 +73,64 @@
       border: 1px solid #ddd;
     }
 
-    /* ================= PATIENT MODAL ================= */
-    #patient-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
+    /* ================= PATIENT PANEL (CORNER) ================= */
+    #patient-panel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 320px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+      padding: 16px;
       display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
+      z-index: 20;
     }
 
-    #patient-box {
-      background: white;
-      width: 520px;
-      max-height: 80vh;
-      overflow-y: auto;
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.25);
-    }
-
-    .modal-header {
+    .panel-header {
+      font-weight: 700;
+      font-size: 16px;
       display: flex;
       justify-content: space-between;
-      font-weight: 700;
-      font-size: 18px;
-    }
-
-    .close-btn {
-      cursor: pointer;
-      font-size: 20px;
+      margin-bottom: 10px;
     }
 
     .patient {
       border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 12px;
-      margin-top: 12px;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
     }
 
-    .patient-header {
+    .patient-name {
+      font-weight: 600;
       display: flex;
       justify-content: space-between;
-      font-weight: 600;
     }
 
     .prescription {
-      margin-top: 8px;
-      padding: 8px;
+      margin-top: 6px;
       background: #f7f8fa;
+      padding: 6px;
       border-radius: 8px;
+      font-size: 14px;
       cursor: pointer;
+    }
+
+    .remove-btn {
+      background: #ff5c5c;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
     }
 
     input {
       width: 100%;
+      margin-top: 6px;
       padding: 6px;
-      margin-top: 4px;
-    }
-
-    .danger {
-      background: #ff5c5c;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 6px 10px;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -151,23 +142,21 @@
     <div class="tts-header">Virtual Companion</div>
     <textarea id="tts-input" placeholder="Enter text to speak"></textarea>
     <button id="tts-button">Speak</button>
-    <button id="patient-btn">Patients</button>
+    <button id="toggle-patients">Patients</button>
     <div id="tts-output"></div>
   </div>
 
-  <!-- PATIENT MODAL -->
-  <div id="patient-modal">
-    <div id="patient-box">
-      <div class="modal-header">
-        Patients
-        <span class="close-btn" onclick="closePatients()">✕</span>
-      </div>
-
-      <input id="new-name" placeholder="Patient name">
-      <button onclick="addPatient()">Add Patient</button>
-
-      <div id="patient-list"></div>
+  <!-- PATIENT PANEL -->
+  <div id="patient-panel">
+    <div class="panel-header">
+      Patients
+      <span style="cursor:pointer" onclick="togglePatients()">✕</span>
     </div>
+
+    <input id="new-patient-name" placeholder="Add patient name">
+    <button onclick="addPatient()">Add</button>
+
+    <div id="patient-list"></div>
   </div>
 
   <!-- PIXI -->
@@ -179,18 +168,35 @@
 
   <!-- PATIENT LOGIC -->
   <script>
-    let patients = [];
-    let idCounter = 1;
+    let patients = [
+      {
+        id: "001",
+        name: "Amir",
+        prescriptions: [
+          { medicine: "Paracetamol 500mg", time_given: "2025-10-22 09:30" }
+        ]
+      },
+      {
+        id: "002",
+        name: "John",
+        prescriptions: [
+          { medicine: "Amlodipine 5mg", time_given: "2025-10-22 08:45" }
+        ]
+      }
+    ];
 
-    const modal = document.getElementById("patient-modal");
-    document.getElementById("patient-btn").onclick = () => modal.style.display = "flex";
+    let idCounter = 3;
 
-    function closePatients() {
-      modal.style.display = "none";
+    const panel = document.getElementById("patient-panel");
+    document.getElementById("toggle-patients").onclick = togglePatients;
+
+    function togglePatients() {
+      panel.style.display = panel.style.display === "none" ? "block" : "none";
+      renderPatients();
     }
 
     function addPatient() {
-      const name = document.getElementById("new-name").value.trim();
+      const name = document.getElementById("new-patient-name").value.trim();
       if (!name) return;
 
       patients.push({
@@ -199,12 +205,25 @@
         prescriptions: []
       });
 
-      document.getElementById("new-name").value = "";
+      document.getElementById("new-patient-name").value = "";
       renderPatients();
     }
 
     function removePatient(index) {
       patients.splice(index, 1);
+      renderPatients();
+    }
+
+    function editPrescription(i) {
+      const med = prompt("Medicine:", patients[i].prescriptions[0]?.medicine || "");
+      if (!med) return;
+
+      const time = prompt(
+        "Date & Time:",
+        patients[i].prescriptions[0]?.time_given || "2025-10-22 09:00"
+      );
+
+      patients[i].prescriptions = [{ medicine: med, time_given: time }];
       renderPatients();
     }
 
@@ -217,27 +236,19 @@
         div.className = "patient";
 
         div.innerHTML = `
-          <div class="patient-header">
-            ${p.name} (ID ${p.id})
-            <button class="danger" onclick="removePatient(${i})">Remove</button>
+          <div class="patient-name">
+            ${p.name}
+            <button class="remove-btn" onclick="removePatient(${i})">Remove</button>
           </div>
-
           <div class="prescription" onclick="editPrescription(${i})">
-            ${p.prescriptions[0]?.medicine || "Click to add prescription"}
+            ${p.prescriptions[0]
+              ? `${p.prescriptions[0].medicine}<br><small>${p.prescriptions[0].time_given}</small>`
+              : "Click to add prescription"}
           </div>
         `;
 
         list.appendChild(div);
       });
-    }
-
-    function editPrescription(i) {
-      const med = prompt("Medicine:", patients[i].prescriptions[0]?.medicine || "");
-      if (!med) return;
-
-      const date = prompt("Date & Time:", new Date().toISOString().slice(0,16).replace("T"," "));
-      patients[i].prescriptions = [{ medicine: med, time_given: date }];
-      renderPatients();
     }
   </script>
 
