@@ -21,7 +21,9 @@
       height: 100vh !important;
     }
 
-    /* ================= TTS PANEL ================= */
+    /* ===============================
+       TTS PANEL (UNCHANGED)
+    =============================== */
     #tts-panel {
       position: absolute;
       top: 50%;
@@ -46,21 +48,24 @@
       padding-bottom: 8px;
     }
 
-    #tts-input {
-      min-height: 120px;
-      border-radius: 12px;
+    #tts-input, .modal input {
+      width: 100%;
+      border-radius: 10px;
       border: 1px solid #ccc;
-      padding: 14px;
-      font-size: 16px;
+      padding: 10px;
+      font-size: 14px;
+      box-sizing: border-box;
     }
 
-    #tts-button, #toggle-patients {
-      height: 44px;
+    #tts-input { min-height: 120px; resize: none; }
+
+    #tts-button {
+      height: 48px;
       border-radius: 12px;
       border: none;
       background: linear-gradient(135deg,#6b8cff,#4f6cff);
       color: #fff;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
     }
@@ -68,69 +73,104 @@
     #tts-output {
       min-height: 80px;
       padding: 12px;
-      background: #f7f8fa;
       border-radius: 12px;
-      border: 1px solid #ddd;
+      background: #f7f8fa;
+      border: 1px solid #e0e0e0;
     }
 
-    /* ================= PATIENT PANEL (CORNER) ================= */
-    #patient-panel {
+    /* ===============================
+       PATIENT TAB (CORNER)
+    =============================== */
+    #patient-tab {
       position: absolute;
       top: 20px;
       right: 20px;
-      width: 320px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-      padding: 16px;
-      display: none;
-      z-index: 20;
-    }
-
-    .panel-header {
-      font-weight: 700;
-      font-size: 16px;
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .patient {
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 10px;
-    }
-
-    .patient-name {
+      background: #4f6cff;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 12px;
       font-weight: 600;
-      display: flex;
-      justify-content: space-between;
+      cursor: pointer;
+      z-index: 20;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
 
-    .prescription {
-      margin-top: 6px;
-      background: #f7f8fa;
-      padding: 6px;
-      border-radius: 8px;
-      font-size: 14px;
+    /* ===============================
+       MODAL OVERLAY
+    =============================== */
+    #patient-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal {
+      background: #fff;
+      width: 520px;
+      max-height: 80vh;
+      overflow-y: auto;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+      font-size: 20px;
+      font-weight: 700;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .close-btn {
       cursor: pointer;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .patient-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+
+    .patient-title {
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .prescription-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr auto;
+      gap: 6px;
+      margin-top: 6px;
     }
 
     .remove-btn {
-      background: #ff5c5c;
+      background: #ff5a5a;
       border: none;
-      color: white;
-      border-radius: 6px;
-      padding: 4px 8px;
+      color: #fff;
+      border-radius: 8px;
+      padding: 6px 10px;
       cursor: pointer;
-      font-size: 12px;
     }
 
-    input {
+    .add-btn {
+      margin-top: 10px;
+      background: #4f6cff;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 10px;
+      cursor: pointer;
       width: 100%;
-      margin-top: 6px;
-      padding: 6px;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -142,115 +182,83 @@
     <div class="tts-header">Virtual Companion</div>
     <textarea id="tts-input" placeholder="Enter text to speak"></textarea>
     <button id="tts-button">Speak</button>
-    <button id="toggle-patients">Patients</button>
     <div id="tts-output"></div>
   </div>
 
-  <!-- PATIENT PANEL -->
-  <div id="patient-panel">
-    <div class="panel-header">
-      Patients
-      <span style="cursor:pointer" onclick="togglePatients()">✕</span>
+  <!-- PATIENT TAB -->
+  <div id="patient-tab">Patients</div>
+
+  <!-- PATIENT MODAL -->
+  <div id="patient-modal">
+    <div class="modal">
+      <div class="modal-header">
+        Patient List
+        <span class="close-btn" id="close-modal">✕</span>
+      </div>
+      <div id="patient-list"></div>
+      <button class="add-btn" id="add-patient">Add Patient</button>
     </div>
-
-    <input id="new-patient-name" placeholder="Add patient name">
-    <button onclick="addPatient()">Add</button>
-
-    <div id="patient-list"></div>
   </div>
 
-  <!-- PIXI -->
+  <!-- PIXI / LIVE2D -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
   <script src="Core/live2dcubismcore.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
   <script src="Main/script.js"></script>
 
-  <!-- PATIENT LOGIC -->
+  <!-- ===============================
+       PATIENT LOGIC (HTML ONLY)
+  =============================== -->
   <script>
+    const modal = document.getElementById("patient-modal");
+    const list = document.getElementById("patient-list");
+
     let patients = [
-      {
-        id: "001",
-        name: "Amir",
-        prescriptions: [
-          { medicine: "Paracetamol 500mg", time_given: "2025-10-22 09:30" }
-        ]
-      },
-      {
-        id: "002",
-        name: "John",
-        prescriptions: [
-          { medicine: "Amlodipine 5mg", time_given: "2025-10-22 08:45" }
-        ]
-      }
+      { name: "Amir", prescriptions: [{ medicine: "Paracetamol 500mg", datetime: "2025-10-22T09:30" }] },
+      { name: "John", prescriptions: [{ medicine: "Amlodipine 5mg", datetime: "2025-10-22T08:45" }] }
     ];
 
-    let idCounter = 3;
-
-    const panel = document.getElementById("patient-panel");
-    document.getElementById("toggle-patients").onclick = togglePatients;
-
-    function togglePatients() {
-      panel.style.display = panel.style.display === "none" ? "block" : "none";
-      renderPatients();
-    }
-
-    function addPatient() {
-      const name = document.getElementById("new-patient-name").value.trim();
-      if (!name) return;
-
-      patients.push({
-        id: String(idCounter++).padStart(3, "0"),
-        name,
-        prescriptions: []
-      });
-
-      document.getElementById("new-patient-name").value = "";
-      renderPatients();
-    }
-
-    function removePatient(index) {
-      patients.splice(index, 1);
-      renderPatients();
-    }
-
-    function editPrescription(i) {
-      const med = prompt("Medicine:", patients[i].prescriptions[0]?.medicine || "");
-      if (!med) return;
-
-      const time = prompt(
-        "Date & Time:",
-        patients[i].prescriptions[0]?.time_given || "2025-10-22 09:00"
-      );
-
-      patients[i].prescriptions = [{ medicine: med, time_given: time }];
-      renderPatients();
-    }
-
     function renderPatients() {
-      const list = document.getElementById("patient-list");
       list.innerHTML = "";
-
       patients.forEach((p, i) => {
-        const div = document.createElement("div");
-        div.className = "patient";
-
-        div.innerHTML = `
-          <div class="patient-name">
-            ${p.name}
-            <button class="remove-btn" onclick="removePatient(${i})">Remove</button>
-          </div>
-          <div class="prescription" onclick="editPrescription(${i})">
-            ${p.prescriptions[0]
-              ? `${p.prescriptions[0].medicine}<br><small>${p.prescriptions[0].time_given}</small>`
-              : "Click to add prescription"}
-          </div>
+        const id = `P${String(i+1).padStart(3,"0")}`;
+        const card = document.createElement("div");
+        card.className = "patient-card";
+        card.innerHTML = `
+          <div class="patient-title">${id}</div>
+          <input value="${p.name}" oninput="patients[${i}].name=this.value">
+          ${p.prescriptions.map((rx,j)=>`
+            <div class="prescription-row">
+              <input value="${rx.medicine}" oninput="patients[${i}].prescriptions[${j}].medicine=this.value">
+              <input type="date" value="${rx.datetime.split('T')[0]}" 
+                onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+patients[${i}].prescriptions[${j}].datetime.split('T')[1]">
+              <input type="time" value="${rx.datetime.split('T')[1]}" 
+                onchange="patients[${i}].prescriptions[${j}].datetime=patients[${i}].prescriptions[${j}].datetime.split('T')[0]+'T'+this.value">
+              <button class="remove-btn" onclick="patients.splice(${i},1);renderPatients()">✕</button>
+            </div>
+          `).join("")}
         `;
-
-        list.appendChild(div);
+        list.appendChild(card);
       });
     }
-  </script>
 
+    document.getElementById("patient-tab").onclick = () => {
+      modal.style.display = "flex";
+      renderPatients();
+    };
+
+    document.getElementById("close-modal").onclick = () => {
+      modal.style.display = "none";
+    };
+
+    document.getElementById("add-patient").onclick = () => {
+      patients.push({
+        name: "New Patient",
+        prescriptions: [{ medicine: "", datetime: new Date().toISOString().slice(0,16) }]
+      });
+      renderPatients();
+    };
+  </script>
 </body>
 </html>
