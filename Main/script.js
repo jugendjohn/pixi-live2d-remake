@@ -33,12 +33,6 @@
     model.internalModel.settings.eyeBlink = true;
     const core = model.internalModel.coreModel;
 
-    // ============================================================
-    // Lip Sync State (persistent)
-    // ============================================================
-    let mouthOpen = 0;
-    let speaking = false;
-
     console.log("✅ Model loaded");
 
     // ============================================================
@@ -99,7 +93,7 @@
     app.stage.on("pointerupoutside", stopDrag);
 
     // ============================================================
-    // Main Ticker (body follow + lip sync)
+    // Main Ticker
     // ============================================================
     const ticker = new PIXI.Ticker();
     ticker.add(() => {
@@ -113,22 +107,18 @@
       core.setParameterValueById("ParamEyeBallX", dx);
       core.setParameterValueById("ParamEyeBallY", dy);
 
-      // ✅ Simulated lip sync
-      core.setParameterValueById("ParamMouthOpenY", mouthOpen);
-
       model.update(1);
       app.renderer.render(app.stage);
     });
     ticker.start();
 
     // ============================================================
-    // TTS + Word Output + Simulated Lip Sync
+    // TTS + Word Output + SIMULATED Lip Sync (FIXED)
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
     const ttsOutput = document.getElementById("tts-output");
 
-    // Ensure voices are loaded
     let voices = [];
     speechSynthesis.onvoiceschanged = () => {
       voices = speechSynthesis.getVoices();
@@ -140,6 +130,8 @@
       );
     }
 
+    let lipTicker = null;
+
     ttsButton.addEventListener("click", () => {
       const text = ttsInput.value.trim();
       if (!text) return;
@@ -147,11 +139,11 @@
       speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.pitch = 1;
-      utterance.rate = 1;
       utterance.voice = getFemaleVoice() || null;
+      utterance.rate = 1;
+      utterance.pitch = 1;
 
-      // Word-by-word output
+      // Word output
       const words = text.split(/\s+/);
       ttsOutput.textContent = "";
       let wordIndex = 0;
@@ -161,26 +153,31 @@
         wordIndex++;
       }, 150);
 
-      // ============================================================
-      // Simulated mouth movement (length-based)
-      // ============================================================
-      utterance.onstart = () => {
-        speaking = true;
+      // Estimate speech duration (ms)
+      const duration =
+        (text.length / (utterance.rate * 12)) * 1000;
 
-        const mouthTimer = setInterval(() => {
-          if (!speaking) {
-            mouthOpen = 0;
-            clearInterval(mouthTimer);
-            return;
-          }
-          mouthOpen = Math.random() * 0.8;
-        }, 120);
+      utterance.onstart = () => {
+        let t = 0;
+        lipTicker = new PIXI.Ticker();
+        lipTicker.add((delta) => {
+          t += delta;
+          const mouth =
+            0.4 + Math.abs(Math.sin(t * 0.15)) * 0.6;
+          core.setParameterValueById("ParamMouthOpenY", mouth);
+        });
+        lipTicker.start();
+
+        setTimeout(() => {
+          lipTicker.stop();
+          core.setParameterValueById("ParamMouthOpenY", 0);
+        }, duration);
       };
 
       utterance.onend = () => {
-        speaking = false;
-        mouthOpen = 0;
         clearInterval(wordTimer);
+        if (lipTicker) lipTicker.stop();
+        core.setParameterValueById("ParamMouthOpenY", 0);
       };
 
       speechSynthesis.speak(utterance);
