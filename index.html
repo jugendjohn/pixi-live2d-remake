@@ -1,393 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Virtual Companion Test</title>
+<meta charset="UTF-8">
+<title>Receptionist Test</title>
 
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-      background: #f4f3f2;
-      font-family: "Segoe UI", Roboto, sans-serif;
-    }
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  background: #f4f3f2;
+  font-family: "Segoe UI", Roboto, sans-serif;
+}
 
-    canvas {
-      display: block;
-      width: 100vw !important;
-      height: 100vh !important;
-    }
+canvas {
+  display: block;
+  width: 100vw !important;
+  height: 100vh !important;
+}
 
-    /* ===============================
-       TTS PANEL
-    =============================== */
-    #tts-panel {
-      position: absolute;
-      top: 50%;
-      left: 35%;
-      transform: translateY(-50%);
-      width: 400px;
-      background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-      padding: 24px;
-      display: none;
-      flex-direction: column;
-      gap: 16px;
-      z-index: 10;
-    }
+/* ===============================
+   TTS PANEL
+=============================== */
+#tts-panel {
+  position: absolute;
+  top: 50%;
+  left: 35%;
+  transform: translateY(-50%);
+  width: 400px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  padding: 24px;
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 10;
+}
 
-    .tts-header {
-      font-size: 20px;
-      font-weight: 700;
-      text-align: center;
-      border-bottom: 1px solid #e6e6e6;
-      padding-bottom: 8px;
-    }
+.tts-header {
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  border-bottom: 1px solid #e6e6e6;
+  padding-bottom: 8px;
+}
 
-    #tts-input, .modal input {
-      width: 100%;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      padding: 10px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
+#tts-input {
+  min-height: 120px;
+  resize: none;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
 
-    #tts-input { min-height: 120px; resize: none; }
+#tts-button {
+  height: 48px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg,#6b8cff,#4f6cff);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-    #tts-button {
-      height: 48px;
-      border-radius: 12px;
-      border: none;
-      background: linear-gradient(135deg,#6b8cff,#4f6cff);
-      color: #fff;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-    }
+#tts-output {
+  min-height: 80px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #f7f8fa;
+  border: 1px solid #e0e0e0;
+}
 
-    #tts-output {
-      min-height: 80px;
-      padding: 12px;
-      border-radius: 12px;
-      background: #f7f8fa;
-      border: 1px solid #e0e0e0;
-    }
+/* ===============================
+   PATIENT TAB
+=============================== */
+#patient-tab {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #4f6cff;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: none;
+  z-index: 20;
+}
 
-    /* ===============================
-       PATIENT TAB (CORNER)
-    =============================== */
-    #patient-tab {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: #4f6cff;
-      color: #fff;
-      padding: 12px 18px;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      z-index: 20;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-      display: none;
-    }
+/* ===============================
+   DISPENSER PANEL
+=============================== */
+#dispenser-panel {
+  position: absolute;
+  top: 50%;
+  right: 35px;
+  transform: translateY(-50%);
+  width: 220px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  padding: 16px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
 
-    /* ===============================
-       PATIENT MODAL
-    =============================== */
-    #patient-modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.4);
-      z-index: 50;
-      align-items: center;
-      justify-content: center;
-    }
+#dispenser-username {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
 
-    .modal {
-      background: #fff;
-      width: 520px;
-      max-height: 80vh;
-      overflow-y: auto;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.3);
-    }
+#dispenser-bottle {
+  width: 90px;
+  margin: 10px 0;
+}
 
-    .modal-header {
-      font-size: 20px;
-      font-weight: 700;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
+#dispenser-medicine {
+  font-size: 14px;
+  font-weight: 600;
+}
 
-    .close-btn {
-      cursor: pointer;
-      font-size: 18px;
-      font-weight: bold;
-    }
+/* ===============================
+   LOGIN OVERLAY
+=============================== */
+#login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  z-index: 100;
+  color: white;
+}
 
-    .patient-card {
-      border: 1px solid #e0e0e0;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 12px;
-    }
+#login-overlay button {
+  padding: 12px 24px;
+  font-size: 18px;
+  cursor: pointer;
+}
 
-    .patient-title {
-      font-weight: 600;
-      margin-bottom: 6px;
-    }
+.login-form {
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  width: 260px;
+}
 
-    .prescription-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr auto;
-      gap: 6px;
-      margin-top: 6px;
-    }
+.login-form input {
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+}
 
-    .remove-btn {
-      background: #ff5a5a;
-      border: none;
-      color: #fff;
-      border-radius: 8px;
-      padding: 6px 10px;
-      cursor: pointer;
-    }
-
-    .add-btn {
-      margin-top: 10px;
-      background: #4f6cff;
-      color: #fff;
-      border: none;
-      padding: 10px;
-      border-radius: 10px;
-      cursor: pointer;
-      width: 100%;
-      font-weight: 600;
-    }
-
-    /* ===============================
-       LOGIN OVERLAY
-    =============================== */
-    #login-overlay {
-      position: absolute;
-      top:0; left:0;
-      width:100vw; height:100vh;
-      background: rgba(0,0,0,0.7);
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      flex-direction: column;
-      gap: 20px;
-      z-index:100;
-      color:white;
-    }
-
-    #login-overlay button {
-      padding: 12px 24px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-    .login-form { display: none; flex-direction: column; gap: 8px; text-align: center; }
-    .login-form input { padding: 8px; border-radius: 8px; border: none; }
-    .login-error { color: red; font-size: 14px; }
-    
-    /* ===============================
-       DISPENSER PANEL
-    =============================== */
-    #dispenser-panel {
-      position: absolute;
-      top: 50%;
-      right: 35px;
-      transform: translateY(-50%);
-      width: 200px;
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-      padding: 16px;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      z-index: 10;
-      font-family: 'Segoe UI', sans-serif;
-    }
-
-    #dispenser-panel img { width: 80px; height: auto; }
-    #dispenser-username { font-weight: 700; margin-bottom: 10px; }
-  </style>
+.login-error {
+  color: #ff5a5a;
+  font-size: 14px;
+}
+</style>
 </head>
 
 <body>
 
-  <!-- LOGIN OVERLAY -->
-  <div id="login-overlay">
-    <h1>Welcome</h1>
-    <div style="display:flex; gap:20px;">
-      <button id="btn-patient">Patient / Guest</button>
-      <button id="btn-staff">Staff</button>
-    </div>
-
-    <!-- Patient Form -->
-    <div class="login-form" id="patient-form">
-      <input type="text" id="patient-id" placeholder="Patient ID">
-      <input type="text" id="patient-name" placeholder="Patient Name">
-      <button id="verify-patient">Verify</button>
-      <div class="login-error" id="patient-error"></div>
-    </div>
-
-    <!-- Staff Form -->
-    <div class="login-form" id="staff-form">
-      <input type="text" id="staff-account" placeholder="Account">
-      <input type="password" id="staff-password" placeholder="Password">
-      <button id="login-staff">Login</button>
-      <div class="login-error" id="staff-error"></div>
-    </div>
+<!-- LOGIN -->
+<div id="login-overlay">
+  <h1>Welcome</h1>
+  <div style="display:flex;gap:16px">
+    <button id="btn-patient">Patient</button>
+    <button id="btn-visitor">Visitor</button>
+    <button id="btn-staff">Staff</button>
   </div>
 
-  <!-- TTS PANEL -->
-  <div id="tts-panel">
-    <div class="tts-header">Virtual Companion</div>
-    <textarea id="tts-input" placeholder="Enter text to speak"></textarea>
-    <button id="tts-button">Speak</button>
-    <div id="tts-output"></div>
+  <div class="login-form" id="patient-form">
+    <input id="patient-id" placeholder="Patient ID">
+    <input id="patient-name" placeholder="Patient Name">
+    <button id="verify-patient">Verify</button>
+    <div class="login-error" id="patient-error"></div>
   </div>
 
-  <!-- DISPENSER PANEL -->
-  <div id="dispenser-panel">
-    <div id="dispenser-username"></div>
-    <img src="f8a2c9ca-958f-4151-83b8-05c7aa2c6d88.png" alt="Bottle">
-    <div id="dispenser-medicine">[MEDICINE] [AMOUNT]</div>
+  <div class="login-form" id="staff-form">
+    <input id="staff-account" placeholder="Account">
+    <input id="staff-password" type="password" placeholder="Password">
+    <button id="login-staff">Login</button>
+    <div class="login-error" id="staff-error"></div>
   </div>
+</div>
 
-  <!-- PATIENT TAB -->
-  <div id="patient-tab">Patients</div>
+<!-- TTS -->
+<div id="tts-panel">
+  <div class="tts-header">Virtual Companion</div>
+  <textarea id="tts-input"></textarea>
+  <button id="tts-button">Speak</button>
+  <div id="tts-output"></div>
+</div>
 
-  <!-- PATIENT MODAL -->
-  <div id="patient-modal">
-    <div class="modal">
-      <div class="modal-header">
-        Patient List
-        <span class="close-btn" id="close-modal">✕</span>
-      </div>
-      <div id="patient-list"></div>
-      <button class="add-btn" id="add-patient">Add Patient</button>
-    </div>
-  </div>
+<!-- DISPENSER -->
+<div id="dispenser-panel">
+  <div id="dispenser-username"></div>
+  <img id="dispenser-bottle" src="Samples/Resources/bottle.png">
+  <div id="dispenser-medicine"></div>
+</div>
 
-  <!-- PIXI / LIVE2D -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
-  <script src="Core/live2dcubismcore.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
-  <script src="Main/script.js"></script>
+<div id="patient-tab">Patients</div>
 
-  <!-- ===============================
-       LOGIN + PATIENT LOGIC
-  =============================== -->
-  <script>
-    // ===== PATIENT LIST =====
-    let patients = [
-      { id:"001", name:"Amir", prescriptions: [{ medicine: "Paracetamol 500mg", datetime:"2025-10-22T09:30" }] },
-      { id:"002", name:"John", prescriptions: [{ medicine: "Amlodipine 5mg", datetime:"2025-10-22T08:45" }] }
-    ];
+<!-- PIXI -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
+<script src="Core/live2dcubismcore.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
+<script src="Main/script.js"></script>
 
-    // ===== LOGIN ELEMENTS =====
-    const loginOverlay = document.getElementById("login-overlay");
-    const btnPatient = document.getElementById("btn-patient");
-    const btnStaff = document.getElementById("btn-staff");
-    const patientForm = document.getElementById("patient-form");
-    const staffForm = document.getElementById("staff-form");
-    const verifyPatientBtn = document.getElementById("verify-patient");
-    const patientIdInput = document.getElementById("patient-id");
-    const patientNameInput = document.getElementById("patient-name");
-    const patientError = document.getElementById("patient-error");
-    const staffLoginBtn = document.getElementById("login-staff");
-    const staffAccountInput = document.getElementById("staff-account");
-    const staffPasswordInput = document.getElementById("staff-password");
-    const staffError = document.getElementById("staff-error");
-    const ttsPanel = document.getElementById("tts-panel");
-    const patientTab = document.getElementById("patient-tab");
-    const dispenserPanel = document.getElementById("dispenser-panel");
-    const dispenserUsername = document.getElementById("dispenser-username");
+<script>
+const patients = [
+  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", amount:"1 tablet" }] },
+  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", amount:"1 tablet" }] }
+];
 
-    // ===== SHOW FORMS =====
-    btnPatient.onclick = () => { patientForm.style.display="flex"; staffForm.style.display="none"; };
-    btnStaff.onclick = () => { staffForm.style.display="flex"; patientForm.style.display="none"; };
+const overlay = document.getElementById("login-overlay");
+const tts = document.getElementById("tts-panel");
+const dispenser = document.getElementById("dispenser-panel");
+const patientTab = document.getElementById("patient-tab");
 
-    // ===== VERIFY PATIENT =====
-    verifyPatientBtn.onclick = () => {
-      const id = patientIdInput.value.trim();
-      const name = patientNameInput.value.trim().toLowerCase();
-      const match = patients.find(p => p.id === id && p.name.toLowerCase() === name);
-      if(match){
-        loginOverlay.style.display="none";
-        ttsPanel.style.display="flex";
-        dispenserPanel.style.display="flex";
-        dispenserUsername.textContent = match.name;
-        patientTab.style.display="none";
-      } else {
-        patientError.textContent = "Invalid patient ID or name";
-      }
-    };
+const bottle = document.getElementById("dispenser-bottle");
+const medText = document.getElementById("dispenser-medicine");
+const userText = document.getElementById("dispenser-username");
 
-    // ===== STAFF LOGIN =====
-    staffLoginBtn.onclick = () => {
-      const account = staffAccountInput.value.trim();
-      const password = staffPasswordInput.value.trim();
-      if(account==="admin" && password==="password"){
-        loginOverlay.style.display="none";
-        ttsPanel.style.display="flex";
-        dispenserPanel.style.display="flex";
-        dispenserUsername.textContent="admin";
-        patientTab.style.display="block";
-      } else {
-        staffError.textContent="Invalid account or password";
-      }
-    };
+btn-patient.onclick = () => showForm("patient");
+btn-staff.onclick = () => showForm("staff");
+btn-visitor.onclick = () => {
+  overlay.style.display = "none";
+  tts.style.display = "flex";
+  dispenser.style.display = "none";
+  patientTab.style.display = "none";
+};
 
-    // ===== PATIENT PANEL LOGIC =====
-    const modal = document.getElementById("patient-modal");
-    const list = document.getElementById("patient-list");
-    document.getElementById("patient-tab").onclick = () => { modal.style.display="flex"; renderPatients(); };
-    document.getElementById("close-modal").onclick = () => { modal.style.display="none"; };
+function showForm(type){
+  patient-form.style.display = type==="patient"?"flex":"none";
+  staff-form.style.display = type==="staff"?"flex":"none";
+}
 
-    function renderPatients(){
-      list.innerHTML="";
-      patients.forEach((p,i)=>{
-        const id = p.id;
-        const card = document.createElement("div");
-        card.className="patient-card";
-        card.innerHTML=`
-          <div class="patient-title">${id}</div>
-          <input value="${p.name}" oninput="patients[${i}].name=this.value">
-          ${p.prescriptions.map((rx,j)=>`
-            <div class="prescription-row">
-              <input value="${rx.medicine}" oninput="patients[${i}].prescriptions[${j}].medicine=this.value">
-              <input type="date" value="${rx.datetime.split('T')[0]}" onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+patients[${i}].prescriptions[${j}].datetime.split('T')[1]">
-              <input type="time" value="${rx.datetime.split('T')[1]}" onchange="patients[${i}].prescriptions[${j}].datetime=patients[${i}].prescriptions[${j}].datetime.split('T')[0]+'T'+this.value">
-              <button class="remove-btn" onclick="patients.splice(${i},1);renderPatients()">✕</button>
-            </div>
-          `).join("")}
-        `;
-        list.appendChild(card);
-      });
-    }
+verify-patient.onclick = () => {
+  const id = patient-id.value.trim();
+  const name = patient-name.value.trim().toLowerCase();
+  const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
+  if(!p){ patient-error.textContent="Invalid details"; return; }
 
-    document.getElementById("add-patient").onclick = () => {
-      const newId = "P"+String(patients.length+1).padStart(3,"0");
-      patients.push({ id:newId, name:"New Patient", prescriptions:[{medicine:"", datetime:new Date().toISOString().slice(0,16)}] });
-      renderPatients();
-    };
-  </script>
+  overlay.style.display="none";
+  tts.style.display="flex";
+  patientTab.style.display="none";
+  userText.textContent=p.name;
+
+  if(p.prescriptions.length){
+    bottle.style.display="block";
+    medText.style.display="block";
+    medText.textContent = `${p.prescriptions[0].medicine} – ${p.prescriptions[0].amount}`;
+    dispenser.style.display="flex";
+  } else {
+    dispenser.style.display="none";
+  }
+};
+
+login-staff.onclick = () => {
+  if(staff-account.value==="admin" && staff-password.value==="password"){
+    overlay.style.display="none";
+    tts.style.display="flex";
+    dispenser.style.display="flex";
+    patientTab.style.display="block";
+    userText.textContent="admin";
+    bottle.style.display="none";
+    medText.style.display="none";
+  } else staff-error.textContent="Invalid login";
+};
+</script>
 </body>
 </html>
