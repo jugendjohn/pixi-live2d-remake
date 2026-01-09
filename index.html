@@ -402,8 +402,9 @@ document.getElementById("dispense-btn").onclick = () => {
   const btn = document.getElementById("dispense-btn");
   btn.textContent = "Dispensing...";
   btn.disabled = true;
+
   setTimeout(()=>{
-    bottle.src = "Samples/Resources/bottle_filled.png";
+    bottle.src = "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
     medText.textContent = "Dispensed!";
     btn.textContent = "Dispense";
     btn.disabled = false;
