@@ -125,6 +125,19 @@ canvas {
 #dispenser-medicine {
   font-size: 14px;
   font-weight: 600;
+  min-height: 18px;
+}
+
+#dispense-btn {
+  margin-top: 12px;
+  padding: 10px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  background: #4f6cff;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* ===============================
@@ -166,6 +179,36 @@ canvas {
   color: #ff5a5a;
   font-size: 14px;
 }
+
+/* ===============================
+   PATIENT MODAL
+=============================== */
+#patient-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: #fff;
+  width: 420px;
+  border-radius: 16px;
+  padding: 20px;
+}
+
+.modal-header {
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+}
+
+.close-btn {
+  cursor: pointer;
+}
 </style>
 </head>
 
@@ -206,14 +249,23 @@ canvas {
 <!-- DISPENSER -->
 <div id="dispenser-panel">
   <div id="dispenser-username"></div>
-  <img
-    id="dispenser-bottle"
-    src="https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png"
-  >
+  <img id="dispenser-bottle" src="">
   <div id="dispenser-medicine"></div>
+  <button id="dispense-btn">Dispense</button>
 </div>
 
 <div id="patient-tab">Patients</div>
+
+<!-- PATIENT MODAL -->
+<div id="patient-modal">
+  <div class="modal">
+    <div class="modal-header">
+      Patient List
+      <span class="close-btn" id="close-patient">✕</span>
+    </div>
+    <div id="patient-list"></div>
+  </div>
+</div>
 
 <!-- PIXI -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
@@ -228,84 +280,81 @@ const patients = [
   { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", amount:"1 tablet" }] }
 ];
 
-const overlay = document.getElementById("login-overlay");
-const tts = document.getElementById("tts-panel");
-const dispenser = document.getElementById("dispenser-panel");
-const patientTab = document.getElementById("patient-tab");
+const overlay = login-overlay;
+const tts = tts-panel;
+const dispenser = dispenser-panel;
+const patientTab = patient-tab;
+const patientModal = patient-modal;
+const patientList = patient-list;
 
-const bottle = document.getElementById("dispenser-bottle");
-const medText = document.getElementById("dispenser-medicine");
-const userText = document.getElementById("dispenser-username");
+const bottle = dispenser-bottle;
+const medText = dispenser-medicine;
+const userText = dispenser-username;
+const dispenseBtn = dispense-btn;
 
-const btnPatient = document.getElementById("btn-patient");
-const btnVisitor = document.getElementById("btn-visitor");
-const btnStaff = document.getElementById("btn-staff");
+btn-patient.onclick = () => showForm("patient");
+btn-staff.onclick = () => showForm("staff");
 
-const patientForm = document.getElementById("patient-form");
-const staffForm = document.getElementById("staff-form");
-
-btnPatient.onclick = () => showForm("patient");
-btnStaff.onclick = () => showForm("staff");
-
-btnVisitor.onclick = () => {
+btn-visitor.onclick = () => {
   overlay.style.display = "none";
   tts.style.display = "flex";
-  dispenser.style.display = "none";
-  patientTab.style.display = "none";
 };
 
 function showForm(type){
-  patientForm.style.display = type === "patient" ? "flex" : "none";
-  staffForm.style.display = type === "staff" ? "flex" : "none";
+  patient-form.style.display = type==="patient"?"flex":"none";
+  staff-form.style.display = type==="staff"?"flex":"none";
 }
 
-document.getElementById("verify-patient").onclick = () => {
-  const id = document.getElementById("patient-id").value.trim();
-  const name = document.getElementById("patient-name").value.trim().toLowerCase();
-  const error = document.getElementById("patient-error");
+verify-patient.onclick = () => {
+  const id = patient-id.value.trim();
+  const name = patient-name.value.trim().toLowerCase();
+  const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
+  if(!p){ patient-error.textContent="Invalid details"; return; }
 
-  const p = patients.find(x => x.id === id && x.name.toLowerCase() === name);
-  if (!p) {
-    error.textContent = "Invalid details";
-    return;
-  }
+  overlay.style.display="none";
+  tts.style.display="flex";
+  dispenser.style.display="flex";
+  userText.textContent=p.name;
 
-  overlay.style.display = "none";
-  tts.style.display = "flex";
-  patientTab.style.display = "none";
-  userText.textContent = p.name;
-
-  if (p.prescriptions.length) {
-    bottle.style.display = "block";
-    medText.style.display = "block";
-    medText.textContent =
-      `${p.prescriptions[0].medicine} – ${p.prescriptions[0].amount}`;
-    dispenser.style.display = "flex";
-  } else {
-    bottle.style.display = "none";
-    medText.style.display = "none";
-    dispenser.style.display = "none";
-  }
+  bottle.src="Samples/Resources/bottle_empty.png";
+  medText.textContent = `${p.prescriptions[0].medicine} – ${p.prescriptions[0].amount}`;
+  dispenseBtn.disabled=false;
+  dispenseBtn.textContent="Dispense";
 };
 
-document.getElementById("login-staff").onclick = () => {
-  const account = document.getElementById("staff-account").value;
-  const password = document.getElementById("staff-password").value;
-  const error = document.getElementById("staff-error");
+dispenseBtn.onclick = () => {
+  dispenseBtn.disabled=true;
+  dispenseBtn.textContent="Dispensing...";
+  setTimeout(()=>{
+    bottle.src="Samples/Resources/bottle.png";
+    medText.textContent="Dispensed!";
+    dispenseBtn.textContent="Done";
+  },3000);
+};
 
-  if (account === "admin" && password === "password") {
-    overlay.style.display = "none";
-    tts.style.display = "flex";
-    dispenser.style.display = "flex";
-    patientTab.style.display = "block";
-    userText.textContent = "admin";
-    bottle.style.display = "none";
-    medText.style.display = "none";
-  } else {
-    error.textContent = "Invalid login";
-  }
+login-staff.onclick = () => {
+  if(staff-account.value==="admin" && staff-password.value==="password"){
+    overlay.style.display="none";
+    tts.style.display="flex";
+    dispenser.style.display="flex";
+    patientTab.style.display="block";
+    userText.textContent="admin";
+    bottle.style.display="none";
+    medText.style.display="none";
+    dispenseBtn.style.display="none";
+  } else staff-error.textContent="Invalid login";
+};
+
+patientTab.onclick = () => {
+  patientList.innerHTML = patients.map(p =>
+    `<div><b>${p.id}</b> – ${p.name}</div>`
+  ).join("");
+  patientModal.style.display = "flex";
+};
+
+close-patient.onclick = () => {
+  patientModal.style.display = "none";
 };
 </script>
-
 </body>
 </html>
