@@ -114,7 +114,7 @@
     ticker.start();
 
     // ============================================================
-    // TTS + Word Output + Simulated Lip Sync
+    // TTS + Word Output + Simulated Lip Sync (Word-count based)
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
@@ -153,32 +153,37 @@
       }, 150);
 
       // ============================================================
-      // SIMULATED LIP SYNC BASED ON LETTER COUNT
+      // WORD-COUNT BASED LIP SYNC
       // ============================================================
       utterance.onstart = () => {
-        const totalLetters = text.length;
+        let currentWord = 0;
+        const wordDuration = 300; // ms per word
         let elapsed = 0;
-        const duration = totalLetters * 25; // ~25ms per letter
 
         const simTicker = new PIXI.Ticker();
-        simTicker.add(() => {
-          elapsed += simTicker.elapsedMS;
-          // simple oscillation for mouth
-          const mouth = 0.4 + Math.abs(Math.sin(elapsed / 100)) * 0.6;
+        simTicker.add((deltaTime) => {
+          elapsed += deltaTime * 16.67; // approx ms per tick
+
+          const cycleTime = elapsed % wordDuration;
+          const half = wordDuration / 2;
+          const mouth = cycleTime < half ? 1.0 : 0.2; // open then close
           core.setParameterValueById("ParamMouthOpenY", mouth);
 
-          if (elapsed >= duration) {
-            simTicker.stop();
-            // smooth mouth close
-            let t = 0;
-            const closeTicker = new PIXI.Ticker();
-            closeTicker.add(() => {
-              t += 0.2;
-              const v = Math.max(0, 0.4 * (1 - t));
-              core.setParameterValueById("ParamMouthOpenY", v);
-              if (t >= 1) closeTicker.stop();
-            });
-            closeTicker.start();
+          if (elapsed >= (currentWord + 1) * wordDuration) {
+            currentWord++;
+            if (currentWord >= words.length) {
+              simTicker.stop();
+              // smooth mouth close
+              let t = 0;
+              const closeTicker = new PIXI.Ticker();
+              closeTicker.add(() => {
+                t += 0.1;
+                const v = Math.max(0, 0.2 * (1 - t));
+                core.setParameterValueById("ParamMouthOpenY", v);
+                if (t >= 1) closeTicker.stop();
+              });
+              closeTicker.start();
+            }
           }
         });
         simTicker.start();
