@@ -200,6 +200,28 @@ canvas {
 .close-btn {
   cursor: pointer;
 }
+
+.patient-card input {
+  width: 100%;
+  margin-bottom: 4px;
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.prescription-row input {
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+.remove-btn {
+  background:#ff5a5a;
+  color:#fff;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+  padding:0 6px;
+}
 </style>
 </head>
 
@@ -242,6 +264,7 @@ canvas {
   <div id="dispenser-username"></div>
   <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png">
   <div id="dispenser-medicine"></div>
+  <button id="dispense-btn" style="margin-top:10px;padding:8px 16px;border-radius:8px;border:none;background:#4f6cff;color:#fff;cursor:pointer;">Dispense</button>
 </div>
 
 <div id="patient-tab">Patients</div>
@@ -251,28 +274,25 @@ canvas {
   <div class="modal">
     <div class="modal-header">
       Patient List
-      <span class="close-btn" id="close-patient">✕</span>
+      <span class="close-btn" id="close-modal">✕</span>
     </div>
     <div id="patient-list"></div>
+    <button id="add-patient" style="margin-top:10px;padding:8px 12px;border-radius:8px;border:none;background:#6b8cff;color:#fff;cursor:pointer;">Add Patient</button>
   </div>
 </div>
 
-<!-- ===============================
-     PIXI / LIVE2D (RE-ADDED)
-=============================== -->
+<!-- PIXI / LIVE2D -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
 <script src="Core/live2dcubismcore.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
 <script src="Main/script.js"></script>
 
-<!-- ===============================
-     UI LOGIC
-=============================== -->
+<!-- UI LOGIC -->
 <script>
 const patients = [
-  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", amount:"1 tablet" }] },
-  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", amount:"1 tablet" }] }
+  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime:new Date().toISOString() }] },
+  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", datetime:new Date().toISOString() }] }
 ];
 
 const overlay = document.getElementById("login-overlay");
@@ -305,23 +325,23 @@ document.getElementById("verify-patient").onclick = () => {
   const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
 
   if(!p){
-    document.getElementById("patient-error").textContent="Invalid details";
+    document.getElementById("patient-error").textContent = "Invalid details";
     return;
   }
 
   overlay.style.display="none";
   tts.style.display="flex";
   dispenser.style.display="flex";
-  userText.textContent=p.name;
+  userText.textContent = p.name;
 
-  bottle.src="Samples/Resources/bottle_empty.png";
-  medText.textContent = `${p.prescriptions[0].medicine} – ${p.prescriptions[0].amount}`;
+  bottle.src = "Samples/Resources/bottle_empty.png";
+  medText.textContent = `${p.prescriptions[0].medicine} – 1 dose`;
 };
 
 document.getElementById("login-staff").onclick = () => {
   if(
-    document.getElementById("staff-account").value==="admin" &&
-    document.getElementById("staff-password").value==="password"
+    document.getElementById("staff-account").value === "admin" &&
+    document.getElementById("staff-password").value === "password"
   ){
     overlay.style.display="none";
     tts.style.display="flex";
@@ -335,15 +355,59 @@ document.getElementById("login-staff").onclick = () => {
   }
 };
 
-patientTab.onclick = () => {
-  patientList.innerHTML = patients.map(p =>
-    `<div><b>${p.id}</b> – ${p.name}</div>`
-  ).join("");
-  patientModal.style.display = "flex";
+// ===== PATIENT PANEL LOGIC =====
+function renderPatients(){
+  patientList.innerHTML = "";
+  patients.forEach((p,i)=>{
+    const id = p.id;
+    const card = document.createElement("div");
+    card.className = "patient-card";
+    card.style.border = "1px solid #ccc";
+    card.style.borderRadius = "12px";
+    card.style.padding = "8px";
+    card.style.marginBottom = "8px";
+    card.innerHTML = `
+      <div class="patient-title"><b>${id}</b></div>
+      <input value="${p.name}" style="margin-bottom:4px;width:100%" oninput="patients[${i}].name=this.value">
+      ${p.prescriptions.map((rx,j)=>`
+        <div class="prescription-row" style="display:flex;gap:4px;margin-bottom:4px;">
+          <input value="${rx.medicine}" oninput="patients[${i}].prescriptions[${j}].medicine=this.value" style="flex:2">
+          <input type="date" value="${rx.datetime?.split('T')[0] || ''}" onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+(patients[${i}].prescriptions[${j}].datetime?.split('T')[1]||'00:00')">
+          <input type="time" value="${rx.datetime?.split('T')[1] || ''}" onchange="patients[${i}].prescriptions[${j}].datetime=(patients[${i}].prescriptions[${j}].datetime?.split('T')[0]||'')+'T'+this.value">
+          <button class="remove-btn" onclick="patients.splice(${i},1);renderPatients()">✕</button>
+        </div>
+      `).join("")}
+    `;
+    patientList.appendChild(card);
+  });
+}
+
+document.getElementById("add-patient").onclick = () => {
+  const newId = "P"+String(patients.length+1).padStart(3,"0");
+  patients.push({ id:newId, name:"New Patient", prescriptions:[{medicine:"", datetime:new Date().toISOString().slice(0,16)}] });
+  renderPatients();
 };
 
-document.getElementById("close-patient").onclick = () => {
-  patientModal.style.display = "none";
+patientTab.onclick = () => {
+  renderPatients();
+  patientModal.style.display="flex";
+};
+
+document.getElementById("close-modal").onclick = () => {
+  patientModal.style.display="none";
+};
+
+// ===== DISPENSER LOGIC =====
+document.getElementById("dispense-btn").onclick = () => {
+  const btn = document.getElementById("dispense-btn");
+  btn.textContent = "Dispensing...";
+  btn.disabled = true;
+  setTimeout(()=>{
+    bottle.src = "Samples/Resources/bottle_filled.png";
+    medText.textContent = "Dispensed!";
+    btn.textContent = "Dispense";
+    btn.disabled = false;
+  }, 3000);
 };
 </script>
 </body>
