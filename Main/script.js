@@ -114,7 +114,7 @@
     ticker.start();
 
     // ============================================================
-    // TTS + Word Output + Simulated Word-Based Lip Sync
+    // TTS + Word Output + Simulated Lip Sync
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
@@ -153,30 +153,32 @@
       }, 150);
 
       // ============================================================
-      // Simulated Lip Sync based on Word Count
+      // SIMULATED LIP SYNC BASED ON LETTER COUNT
       // ============================================================
       utterance.onstart = () => {
-        let currentWord = 0;
-        const totalWords = words.length;
+        const totalLetters = text.length;
+        let elapsed = 0;
+        const duration = totalLetters * 25; // ~25ms per letter
 
         const simTicker = new PIXI.Ticker();
         simTicker.add(() => {
-          if (currentWord >= totalWords) {
+          elapsed += simTicker.elapsedMS;
+          // simple oscillation for mouth
+          const mouth = 0.4 + Math.abs(Math.sin(elapsed / 100)) * 0.6;
+          core.setParameterValueById("ParamMouthOpenY", mouth);
+
+          if (elapsed >= duration) {
             simTicker.stop();
-            core.setParameterValueById("ParamMouthOpenY", 0);
-            return;
-          }
-
-          // Animate mouth: open and close with each word
-          const cycle = (Math.sin(Date.now() / 100) + 1) / 2; // 0–1 oscillation
-          core.setParameterValueById("ParamMouthOpenY", 0.3 + cycle * 0.5);
-
-          // Move to next word roughly every 400ms
-          const elapsed = Date.now();
-          if (!simTicker.startTime) simTicker.startTime = elapsed;
-          if (elapsed - simTicker.startTime >= 100) {
-            simTicker.startTime = elapsed;
-            currentWord++;
+            // smooth mouth close
+            let t = 0;
+            const closeTicker = new PIXI.Ticker();
+            closeTicker.add(() => {
+              t += 0.2;
+              const v = Math.max(0, 0.4 * (1 - t));
+              core.setParameterValueById("ParamMouthOpenY", v);
+              if (t >= 1) closeTicker.stop();
+            });
+            closeTicker.start();
           }
         });
         simTicker.start();
@@ -184,7 +186,6 @@
 
       utterance.onend = () => {
         clearInterval(wordTimer);
-        core.setParameterValueById("ParamMouthOpenY", 0);
       };
 
       speechSynthesis.speak(utterance);
