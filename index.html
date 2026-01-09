@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Receptionist Test</title>
+  <title>Virtual Companion Test</title>
 
   <style>
     html, body {
@@ -22,7 +22,7 @@
     }
 
     /* ===============================
-       TTS PANEL (UNCHANGED)
+       TTS PANEL
     =============================== */
     #tts-panel {
       position: absolute;
@@ -34,7 +34,7 @@
       border-radius: 20px;
       box-shadow: 0 25px 50px rgba(0,0,0,0.15);
       padding: 24px;
-      display: flex;
+      display: none;
       flex-direction: column;
       gap: 16px;
       z-index: 10;
@@ -93,10 +93,11 @@
       cursor: pointer;
       z-index: 20;
       box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      display: none;
     }
 
     /* ===============================
-       MODAL OVERLAY
+       PATIENT MODAL
     =============================== */
     #patient-modal {
       display: none;
@@ -172,10 +173,86 @@
       width: 100%;
       font-weight: 600;
     }
+
+    /* ===============================
+       LOGIN OVERLAY
+    =============================== */
+    #login-overlay {
+      position: absolute;
+      top:0; left:0;
+      width:100vw; height:100vh;
+      background: rgba(0,0,0,0.7);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      flex-direction: column;
+      gap: 20px;
+      z-index:100;
+      color:white;
+    }
+
+    #login-overlay button {
+      padding: 12px 24px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .login-form { display: none; flex-direction: column; gap: 8px; text-align: center; }
+    .login-form input { padding: 8px; border-radius: 8px; border: none; }
+    .login-error { color: red; font-size: 14px; }
+    
+    /* ===============================
+       DISPENSER PANEL
+    =============================== */
+    #dispenser-panel {
+      position: absolute;
+      top: 50%;
+      right: 35px;
+      transform: translateY(-50%);
+      width: 200px;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+      padding: 16px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      z-index: 10;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    #dispenser-panel img { width: 80px; height: auto; }
+    #dispenser-username { font-weight: 700; margin-bottom: 10px; }
   </style>
 </head>
 
 <body>
+
+  <!-- LOGIN OVERLAY -->
+  <div id="login-overlay">
+    <h1>Welcome</h1>
+    <div style="display:flex; gap:20px;">
+      <button id="btn-patient">Patient / Guest</button>
+      <button id="btn-staff">Staff</button>
+    </div>
+
+    <!-- Patient Form -->
+    <div class="login-form" id="patient-form">
+      <input type="text" id="patient-id" placeholder="Patient ID">
+      <input type="text" id="patient-name" placeholder="Patient Name">
+      <button id="verify-patient">Verify</button>
+      <div class="login-error" id="patient-error"></div>
+    </div>
+
+    <!-- Staff Form -->
+    <div class="login-form" id="staff-form">
+      <input type="text" id="staff-account" placeholder="Account">
+      <input type="password" id="staff-password" placeholder="Password">
+      <button id="login-staff">Login</button>
+      <div class="login-error" id="staff-error"></div>
+    </div>
+  </div>
 
   <!-- TTS PANEL -->
   <div id="tts-panel">
@@ -183,6 +260,13 @@
     <textarea id="tts-input" placeholder="Enter text to speak"></textarea>
     <button id="tts-button">Speak</button>
     <div id="tts-output"></div>
+  </div>
+
+  <!-- DISPENSER PANEL -->
+  <div id="dispenser-panel">
+    <div id="dispenser-username"></div>
+    <img src="f8a2c9ca-958f-4151-83b8-05c7aa2c6d88.png" alt="Bottle">
+    <div id="dispenser-medicine">[MEDICINE] [AMOUNT]</div>
   </div>
 
   <!-- PATIENT TAB -->
@@ -208,33 +292,89 @@
   <script src="Main/script.js"></script>
 
   <!-- ===============================
-       PATIENT LOGIC (HTML ONLY)
+       LOGIN + PATIENT LOGIC
   =============================== -->
   <script>
-    const modal = document.getElementById("patient-modal");
-    const list = document.getElementById("patient-list");
-
+    // ===== PATIENT LIST =====
     let patients = [
-      { name: "Amir", prescriptions: [{ medicine: "Paracetamol 500mg", datetime: "2025-10-22T09:30" }] },
-      { name: "John", prescriptions: [{ medicine: "Amlodipine 5mg", datetime: "2025-10-22T08:45" }] }
+      { id:"001", name:"Amir", prescriptions: [{ medicine: "Paracetamol 500mg", datetime:"2025-10-22T09:30" }] },
+      { id:"002", name:"John", prescriptions: [{ medicine: "Amlodipine 5mg", datetime:"2025-10-22T08:45" }] }
     ];
 
-    function renderPatients() {
-      list.innerHTML = "";
-      patients.forEach((p, i) => {
-        const id = `P${String(i+1).padStart(3,"0")}`;
+    // ===== LOGIN ELEMENTS =====
+    const loginOverlay = document.getElementById("login-overlay");
+    const btnPatient = document.getElementById("btn-patient");
+    const btnStaff = document.getElementById("btn-staff");
+    const patientForm = document.getElementById("patient-form");
+    const staffForm = document.getElementById("staff-form");
+    const verifyPatientBtn = document.getElementById("verify-patient");
+    const patientIdInput = document.getElementById("patient-id");
+    const patientNameInput = document.getElementById("patient-name");
+    const patientError = document.getElementById("patient-error");
+    const staffLoginBtn = document.getElementById("login-staff");
+    const staffAccountInput = document.getElementById("staff-account");
+    const staffPasswordInput = document.getElementById("staff-password");
+    const staffError = document.getElementById("staff-error");
+    const ttsPanel = document.getElementById("tts-panel");
+    const patientTab = document.getElementById("patient-tab");
+    const dispenserPanel = document.getElementById("dispenser-panel");
+    const dispenserUsername = document.getElementById("dispenser-username");
+
+    // ===== SHOW FORMS =====
+    btnPatient.onclick = () => { patientForm.style.display="flex"; staffForm.style.display="none"; };
+    btnStaff.onclick = () => { staffForm.style.display="flex"; patientForm.style.display="none"; };
+
+    // ===== VERIFY PATIENT =====
+    verifyPatientBtn.onclick = () => {
+      const id = patientIdInput.value.trim();
+      const name = patientNameInput.value.trim().toLowerCase();
+      const match = patients.find(p => p.id === id && p.name.toLowerCase() === name);
+      if(match){
+        loginOverlay.style.display="none";
+        ttsPanel.style.display="flex";
+        dispenserPanel.style.display="flex";
+        dispenserUsername.textContent = match.name;
+        patientTab.style.display="none";
+      } else {
+        patientError.textContent = "Invalid patient ID or name";
+      }
+    };
+
+    // ===== STAFF LOGIN =====
+    staffLoginBtn.onclick = () => {
+      const account = staffAccountInput.value.trim();
+      const password = staffPasswordInput.value.trim();
+      if(account==="admin" && password==="password"){
+        loginOverlay.style.display="none";
+        ttsPanel.style.display="flex";
+        dispenserPanel.style.display="flex";
+        dispenserUsername.textContent="admin";
+        patientTab.style.display="block";
+      } else {
+        staffError.textContent="Invalid account or password";
+      }
+    };
+
+    // ===== PATIENT PANEL LOGIC =====
+    const modal = document.getElementById("patient-modal");
+    const list = document.getElementById("patient-list");
+    document.getElementById("patient-tab").onclick = () => { modal.style.display="flex"; renderPatients(); };
+    document.getElementById("close-modal").onclick = () => { modal.style.display="none"; };
+
+    function renderPatients(){
+      list.innerHTML="";
+      patients.forEach((p,i)=>{
+        const id = p.id;
         const card = document.createElement("div");
-        card.className = "patient-card";
-        card.innerHTML = `
+        card.className="patient-card";
+        card.innerHTML=`
           <div class="patient-title">${id}</div>
           <input value="${p.name}" oninput="patients[${i}].name=this.value">
           ${p.prescriptions.map((rx,j)=>`
             <div class="prescription-row">
               <input value="${rx.medicine}" oninput="patients[${i}].prescriptions[${j}].medicine=this.value">
-              <input type="date" value="${rx.datetime.split('T')[0]}" 
-                onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+patients[${i}].prescriptions[${j}].datetime.split('T')[1]">
-              <input type="time" value="${rx.datetime.split('T')[1]}" 
-                onchange="patients[${i}].prescriptions[${j}].datetime=patients[${i}].prescriptions[${j}].datetime.split('T')[0]+'T'+this.value">
+              <input type="date" value="${rx.datetime.split('T')[0]}" onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+patients[${i}].prescriptions[${j}].datetime.split('T')[1]">
+              <input type="time" value="${rx.datetime.split('T')[1]}" onchange="patients[${i}].prescriptions[${j}].datetime=patients[${i}].prescriptions[${j}].datetime.split('T')[0]+'T'+this.value">
               <button class="remove-btn" onclick="patients.splice(${i},1);renderPatients()">✕</button>
             </div>
           `).join("")}
@@ -243,20 +383,9 @@
       });
     }
 
-    document.getElementById("patient-tab").onclick = () => {
-      modal.style.display = "flex";
-      renderPatients();
-    };
-
-    document.getElementById("close-modal").onclick = () => {
-      modal.style.display = "none";
-    };
-
     document.getElementById("add-patient").onclick = () => {
-      patients.push({
-        name: "New Patient",
-        prescriptions: [{ medicine: "", datetime: new Date().toISOString().slice(0,16) }]
-      });
+      const newId = "P"+String(patients.length+1).padStart(3,"0");
+      patients.push({ id:newId, name:"New Patient", prescriptions:[{medicine:"", datetime:new Date().toISOString().slice(0,16)}] });
       renderPatients();
     };
   </script>
