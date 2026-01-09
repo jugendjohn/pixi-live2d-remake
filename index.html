@@ -206,7 +206,10 @@ canvas {
 <!-- DISPENSER -->
 <div id="dispenser-panel">
   <div id="dispenser-username"></div>
-  <img id="dispenser-bottle" src="Samples/Resources/bottle.png">
+  <img
+    id="dispenser-bottle"
+    src="https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png"
+  >
   <div id="dispenser-medicine"></div>
 </div>
 
@@ -234,9 +237,17 @@ const bottle = document.getElementById("dispenser-bottle");
 const medText = document.getElementById("dispenser-medicine");
 const userText = document.getElementById("dispenser-username");
 
-btn-patient.onclick = () => showForm("patient");
-btn-staff.onclick = () => showForm("staff");
-btn-visitor.onclick = () => {
+const btnPatient = document.getElementById("btn-patient");
+const btnVisitor = document.getElementById("btn-visitor");
+const btnStaff = document.getElementById("btn-staff");
+
+const patientForm = document.getElementById("patient-form");
+const staffForm = document.getElementById("staff-form");
+
+btnPatient.onclick = () => showForm("patient");
+btnStaff.onclick = () => showForm("staff");
+
+btnVisitor.onclick = () => {
   overlay.style.display = "none";
   tts.style.display = "flex";
   dispenser.style.display = "none";
@@ -244,42 +255,57 @@ btn-visitor.onclick = () => {
 };
 
 function showForm(type){
-  patient-form.style.display = type==="patient"?"flex":"none";
-  staff-form.style.display = type==="staff"?"flex":"none";
+  patientForm.style.display = type === "patient" ? "flex" : "none";
+  staffForm.style.display = type === "staff" ? "flex" : "none";
 }
 
-verify-patient.onclick = () => {
-  const id = patient-id.value.trim();
-  const name = patient-name.value.trim().toLowerCase();
-  const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
-  if(!p){ patient-error.textContent="Invalid details"; return; }
+document.getElementById("verify-patient").onclick = () => {
+  const id = document.getElementById("patient-id").value.trim();
+  const name = document.getElementById("patient-name").value.trim().toLowerCase();
+  const error = document.getElementById("patient-error");
 
-  overlay.style.display="none";
-  tts.style.display="flex";
-  patientTab.style.display="none";
-  userText.textContent=p.name;
+  const p = patients.find(x => x.id === id && x.name.toLowerCase() === name);
+  if (!p) {
+    error.textContent = "Invalid details";
+    return;
+  }
 
-  if(p.prescriptions.length){
-    bottle.style.display="block";
-    medText.style.display="block";
-    medText.textContent = `${p.prescriptions[0].medicine} – ${p.prescriptions[0].amount}`;
-    dispenser.style.display="flex";
+  overlay.style.display = "none";
+  tts.style.display = "flex";
+  patientTab.style.display = "none";
+  userText.textContent = p.name;
+
+  if (p.prescriptions.length) {
+    bottle.style.display = "block";
+    medText.style.display = "block";
+    medText.textContent =
+      `${p.prescriptions[0].medicine} – ${p.prescriptions[0].amount}`;
+    dispenser.style.display = "flex";
   } else {
-    dispenser.style.display="none";
+    bottle.style.display = "none";
+    medText.style.display = "none";
+    dispenser.style.display = "none";
   }
 };
 
-login-staff.onclick = () => {
-  if(staff-account.value==="admin" && staff-password.value==="password"){
-    overlay.style.display="none";
-    tts.style.display="flex";
-    dispenser.style.display="flex";
-    patientTab.style.display="block";
-    userText.textContent="admin";
-    bottle.style.display="none";
-    medText.style.display="none";
-  } else staff-error.textContent="Invalid login";
+document.getElementById("login-staff").onclick = () => {
+  const account = document.getElementById("staff-account").value;
+  const password = document.getElementById("staff-password").value;
+  const error = document.getElementById("staff-error");
+
+  if (account === "admin" && password === "password") {
+    overlay.style.display = "none";
+    tts.style.display = "flex";
+    dispenser.style.display = "flex";
+    patientTab.style.display = "block";
+    userText.textContent = "admin";
+    bottle.style.display = "none";
+    medText.style.display = "none";
+  } else {
+    error.textContent = "Invalid login";
+  }
 };
 </script>
+
 </body>
 </html>
