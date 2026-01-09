@@ -114,13 +114,12 @@
     ticker.start();
 
     // ============================================================
-    // TTS + Word Output + Lip Sync (Fixed)
+    // TTS + Word Output + Simulated Word-Based Lip Sync
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
     const ttsOutput = document.getElementById("tts-output");
 
-    // Ensure voices are loaded before first TTS
     let voices = [];
     speechSynthesis.onvoiceschanged = () => {
       voices = speechSynthesis.getVoices();
@@ -131,8 +130,6 @@
         /female|zira|samantha|victoria|susan/i.test(v.name)
       );
     }
-
-    let lipTicker = null;
 
     ttsButton.addEventListener("click", () => {
       const text = ttsInput.value.trim();
@@ -156,39 +153,38 @@
       }, 150);
 
       // ============================================================
-      // LIP SYNC FIX
+      // Simulated Lip Sync based on Word Count
       // ============================================================
       utterance.onstart = () => {
-        if (lipTicker) lipTicker.stop();
+        let currentWord = 0;
+        const totalWords = words.length;
 
-        let phase = 0;
-        lipTicker = new PIXI.Ticker();
-        lipTicker.add(() => {
-          phase += 0.25;
-          const mouth = 0.4 + Math.abs(Math.sin(phase)) * 0.6;
-          core.setParameterValueById("ParamMouthOpenY", mouth);
+        const simTicker = new PIXI.Ticker();
+        simTicker.add(() => {
+          if (currentWord >= totalWords) {
+            simTicker.stop();
+            core.setParameterValueById("ParamMouthOpenY", 0);
+            return;
+          }
+
+          // Animate mouth: open and close with each word
+          const cycle = (Math.sin(Date.now() / 100) + 1) / 2; // 0–1 oscillation
+          core.setParameterValueById("ParamMouthOpenY", 0.3 + cycle * 0.5);
+
+          // Move to next word roughly every 400ms
+          const elapsed = Date.now();
+          if (!simTicker.startTime) simTicker.startTime = elapsed;
+          if (elapsed - simTicker.startTime >= 400) {
+            simTicker.startTime = elapsed;
+            currentWord++;
+          }
         });
-        lipTicker.start();
+        simTicker.start();
       };
 
       utterance.onend = () => {
-        if (lipTicker) {
-          lipTicker.stop();
-          lipTicker = null;
-        }
-
-        // Smooth mouth close
-        let t = 0;
-        const closeTicker = new PIXI.Ticker();
-        closeTicker.add(() => {
-          t += 0.2;
-          const v = Math.max(0, 0.4 * (1 - t));
-          core.setParameterValueById("ParamMouthOpenY", v);
-          if (t >= 1) closeTicker.stop();
-        });
-        closeTicker.start();
-
         clearInterval(wordTimer);
+        core.setParameterValueById("ParamMouthOpenY", 0);
       };
 
       speechSynthesis.speak(utterance);
