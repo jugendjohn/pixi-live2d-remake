@@ -15,10 +15,13 @@ html, body {
   font-family: "Segoe UI", Roboto, sans-serif;
 }
 
+/* 🔑 CRITICAL FIX: allow clicks to pass through canvas */
 canvas {
-  display: block;
+  position: fixed;
+  inset: 0;
   width: 100vw !important;
   height: 100vh !important;
+  pointer-events: none;
 }
 
 /* ===============================
@@ -110,6 +113,7 @@ canvas {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  z-index: 10;
 }
 
 #dispenser-username {
@@ -125,19 +129,6 @@ canvas {
 #dispenser-medicine {
   font-size: 14px;
   font-weight: 600;
-  min-height: 18px;
-}
-
-#dispense-btn {
-  margin-top: 12px;
-  padding: 10px;
-  width: 100%;
-  border: none;
-  border-radius: 10px;
-  background: #4f6cff;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 /* ===============================
@@ -249,9 +240,8 @@ canvas {
 <!-- DISPENSER -->
 <div id="dispenser-panel">
   <div id="dispenser-username"></div>
-  <img id="dispenser-bottle" src="">
+  <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png">
   <div id="dispenser-medicine"></div>
-  <button id="dispense-btn">Dispense</button>
 </div>
 
 <div id="patient-tab">Patients</div>
@@ -267,49 +257,57 @@ canvas {
   </div>
 </div>
 
-<!-- PIXI -->
+<!-- ===============================
+     PIXI / LIVE2D (RE-ADDED)
+=============================== -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
 <script src="Core/live2dcubismcore.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
 <script src="Main/script.js"></script>
 
+<!-- ===============================
+     UI LOGIC
+=============================== -->
 <script>
 const patients = [
   { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", amount:"1 tablet" }] },
   { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", amount:"1 tablet" }] }
 ];
 
-const overlay = login-overlay;
-const tts = tts-panel;
-const dispenser = dispenser-panel;
-const patientTab = patient-tab;
-const patientModal = patient-modal;
-const patientList = patient-list;
+const overlay = document.getElementById("login-overlay");
+const tts = document.getElementById("tts-panel");
+const dispenser = document.getElementById("dispenser-panel");
+const patientTab = document.getElementById("patient-tab");
+const patientModal = document.getElementById("patient-modal");
+const patientList = document.getElementById("patient-list");
 
-const bottle = dispenser-bottle;
-const medText = dispenser-medicine;
-const userText = dispenser-username;
-const dispenseBtn = dispense-btn;
+const bottle = document.getElementById("dispenser-bottle");
+const medText = document.getElementById("dispenser-medicine");
+const userText = document.getElementById("dispenser-username");
 
-btn-patient.onclick = () => showForm("patient");
-btn-staff.onclick = () => showForm("staff");
+document.getElementById("btn-patient").onclick = () => showForm("patient");
+document.getElementById("btn-staff").onclick = () => showForm("staff");
 
-btn-visitor.onclick = () => {
+document.getElementById("btn-visitor").onclick = () => {
   overlay.style.display = "none";
   tts.style.display = "flex";
 };
 
 function showForm(type){
-  patient-form.style.display = type==="patient"?"flex":"none";
-  staff-form.style.display = type==="staff"?"flex":"none";
+  document.getElementById("patient-form").style.display = type==="patient"?"flex":"none";
+  document.getElementById("staff-form").style.display = type==="staff"?"flex":"none";
 }
 
-verify-patient.onclick = () => {
-  const id = patient-id.value.trim();
-  const name = patient-name.value.trim().toLowerCase();
+document.getElementById("verify-patient").onclick = () => {
+  const id = document.getElementById("patient-id").value.trim();
+  const name = document.getElementById("patient-name").value.trim().toLowerCase();
   const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
-  if(!p){ patient-error.textContent="Invalid details"; return; }
+
+  if(!p){
+    document.getElementById("patient-error").textContent="Invalid details";
+    return;
+  }
 
   overlay.style.display="none";
   tts.style.display="flex";
@@ -318,22 +316,13 @@ verify-patient.onclick = () => {
 
   bottle.src="Samples/Resources/bottle_empty.png";
   medText.textContent = `${p.prescriptions[0].medicine} – ${p.prescriptions[0].amount}`;
-  dispenseBtn.disabled=false;
-  dispenseBtn.textContent="Dispense";
 };
 
-dispenseBtn.onclick = () => {
-  dispenseBtn.disabled=true;
-  dispenseBtn.textContent="Dispensing...";
-  setTimeout(()=>{
-    bottle.src="Samples/Resources/bottle.png";
-    medText.textContent="Dispensed!";
-    dispenseBtn.textContent="Done";
-  },3000);
-};
-
-login-staff.onclick = () => {
-  if(staff-account.value==="admin" && staff-password.value==="password"){
+document.getElementById("login-staff").onclick = () => {
+  if(
+    document.getElementById("staff-account").value==="admin" &&
+    document.getElementById("staff-password").value==="password"
+  ){
     overlay.style.display="none";
     tts.style.display="flex";
     dispenser.style.display="flex";
@@ -341,8 +330,9 @@ login-staff.onclick = () => {
     userText.textContent="admin";
     bottle.style.display="none";
     medText.style.display="none";
-    dispenseBtn.style.display="none";
-  } else staff-error.textContent="Invalid login";
+  } else {
+    document.getElementById("staff-error").textContent="Invalid login";
+  }
 };
 
 patientTab.onclick = () => {
@@ -352,7 +342,7 @@ patientTab.onclick = () => {
   patientModal.style.display = "flex";
 };
 
-close-patient.onclick = () => {
+document.getElementById("close-patient").onclick = () => {
   patientModal.style.display = "none";
 };
 </script>
