@@ -114,7 +114,7 @@
     ticker.start();
 
     // ============================================================
-    // TTS + Word Output + FIXED Lip Sync
+    // TTS + Word Output + Lip Sync (Fixed)
     // ============================================================
     const ttsInput = document.getElementById("tts-input");
     const ttsButton = document.getElementById("tts-button");
@@ -131,6 +131,8 @@
         /female|zira|samantha|victoria|susan/i.test(v.name)
       );
     }
+
+    let lipTicker = null;
 
     ttsButton.addEventListener("click", () => {
       const text = ttsInput.value.trim();
@@ -154,21 +156,18 @@
       }, 150);
 
       // ============================================================
-      // FIXED Lip Sync (NO duration guessing)
+      // LIP SYNC FIX
       // ============================================================
-      let lipTicker = null;
-
       utterance.onstart = () => {
-        let t = 0;
+        if (lipTicker) lipTicker.stop();
 
+        let phase = 0;
         lipTicker = new PIXI.Ticker();
-        lipTicker.add((delta) => {
-          t += delta;
-          const mouth =
-            0.3 + Math.abs(Math.sin(t * 0.2)) * 0.7;
+        lipTicker.add(() => {
+          phase += 0.25;
+          const mouth = 0.4 + Math.abs(Math.sin(phase)) * 0.6;
           core.setParameterValueById("ParamMouthOpenY", mouth);
         });
-
         lipTicker.start();
       };
 
@@ -177,7 +176,18 @@
           lipTicker.stop();
           lipTicker = null;
         }
-        core.setParameterValueById("ParamMouthOpenY", 0);
+
+        // Smooth mouth close
+        let t = 0;
+        const closeTicker = new PIXI.Ticker();
+        closeTicker.add(() => {
+          t += 0.2;
+          const v = Math.max(0, 0.4 * (1 - t));
+          core.setParameterValueById("ParamMouthOpenY", v);
+          if (t >= 1) closeTicker.stop();
+        });
+        closeTicker.start();
+
         clearInterval(wordTimer);
       };
 
