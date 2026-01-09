@@ -174,7 +174,7 @@
           // Move to next word roughly every 400ms
           const elapsed = Date.now();
           if (!simTicker.startTime) simTicker.startTime = elapsed;
-          if (elapsed - simTicker.startTime >= 400) {
+          if (elapsed - simTicker.startTime >= 100) {
             simTicker.startTime = elapsed;
             currentWord++;
           }
