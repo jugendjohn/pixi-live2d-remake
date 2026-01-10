@@ -291,8 +291,8 @@ canvas {
 <!-- UI LOGIC -->
 <script>
 const patients = [
-  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime:new Date().toISOString() }] },
-  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", datetime:new Date().toISOString() }] }
+  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime: "2025-10-22T09:30" }] },
+  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", datetime: "2025-10-22T08:45" }] }
 ];
 
 const overlay = document.getElementById("login-overlay");
@@ -358,26 +358,57 @@ document.getElementById("login-staff").onclick = () => {
 // ===== PATIENT PANEL LOGIC =====
 function renderPatients(){
   patientList.innerHTML = "";
+
   patients.forEach((p,i)=>{
-    const id = p.id;
     const card = document.createElement("div");
-    card.className = "patient-card";
-    card.style.border = "1px solid #ccc";
-    card.style.borderRadius = "12px";
-    card.style.padding = "8px";
-    card.style.marginBottom = "8px";
+    card.style.background = "#fff";
+    card.style.border = "1px solid #ddd";
+    card.style.borderRadius = "14px";
+    card.style.padding = "12px";
+    card.style.marginBottom = "12px";
+
     card.innerHTML = `
-      <div class="patient-title"><b>${id}</b></div>
-      <input value="${p.name}" style="margin-bottom:4px;width:100%" oninput="patients[${i}].name=this.value">
-      ${p.prescriptions.map((rx,j)=>`
-        <div class="prescription-row" style="display:flex;gap:4px;margin-bottom:4px;">
-          <input value="${rx.medicine}" oninput="patients[${i}].prescriptions[${j}].medicine=this.value" style="flex:2">
-          <input type="date" value="${rx.datetime?.split('T')[0] || ''}" onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+(patients[${i}].prescriptions[${j}].datetime?.split('T')[1]||'00:00')">
-          <input type="time" value="${rx.datetime?.split('T')[1] || ''}" onchange="patients[${i}].prescriptions[${j}].datetime=(patients[${i}].prescriptions[${j}].datetime?.split('T')[0]||'')+'T'+this.value">
-          <button class="remove-btn" onclick="patients.splice(${i},1);renderPatients()">✕</button>
-        </div>
-      `).join("")}
+      <div style="font-weight:700;margin-bottom:6px;">P${p.id}</div>
+
+      <input
+        value="${p.name}"
+        oninput="patients[${i}].name=this.value"
+        style="width:100%;padding:8px;border-radius:10px;border:1px solid #ccc;margin-bottom:10px;"
+      >
+
+      ${p.prescriptions.map((rx,j)=>{
+        const [date,time] = rx.datetime.split("T");
+        return `
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <input
+              value="${rx.medicine}"
+              oninput="patients[${i}].prescriptions[${j}].medicine=this.value"
+              style="flex:2;padding:8px;border-radius:10px;border:1px solid #ccc;"
+            >
+
+            <input
+              type="date"
+              value="${date}"
+              onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+patients[${i}].prescriptions[${j}].datetime.split('T')[1]"
+              style="padding:8px;border-radius:10px;border:1px solid #ccc;"
+            >
+
+            <input
+              type="time"
+              value="${time}"
+              onchange="patients[${i}].prescriptions[${j}].datetime=patients[${i}].prescriptions[${j}].datetime.split('T')[0]+'T'+this.value"
+              style="padding:8px;border-radius:10px;border:1px solid #ccc;"
+            >
+
+            <button
+              onclick="patients.splice(${i},1);renderPatients()"
+              style="background:#ff5a5a;color:#fff;border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;"
+            >✕</button>
+          </div>
+        `;
+      }).join("")}
     `;
+
     patientList.appendChild(card);
   });
 }
@@ -413,3 +444,4 @@ document.getElementById("dispense-btn").onclick = () => {
 </script>
 </body>
 </html>
+
