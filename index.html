@@ -15,7 +15,7 @@ html, body {
   font-family: "Segoe UI", Roboto, sans-serif;
 }
 
-/* allow clicks to pass through Live2D canvas */
+/* 🔑 CRITICAL FIX: allow clicks to pass through canvas */
 canvas {
   position: fixed;
   inset: 0;
@@ -24,7 +24,9 @@ canvas {
   pointer-events: none;
 }
 
-/* ================= TTS PANEL ================= */
+/* ===============================
+   TTS PANEL
+=============================== */
 #tts-panel {
   position: absolute;
   top: 50%;
@@ -77,7 +79,9 @@ canvas {
   border: 1px solid #e0e0e0;
 }
 
-/* ================= PATIENT TAB ================= */
+/* ===============================
+   PATIENT TAB
+=============================== */
 #patient-tab {
   position: absolute;
   top: 20px;
@@ -92,7 +96,9 @@ canvas {
   z-index: 20;
 }
 
-/* ================= DISPENSER ================= */
+/* ===============================
+   DISPENSER PANEL
+=============================== */
 #dispenser-panel {
   position: absolute;
   top: 50%;
@@ -125,7 +131,9 @@ canvas {
   font-weight: 600;
 }
 
-/* ================= LOGIN ================= */
+/* ===============================
+   LOGIN OVERLAY
+=============================== */
 #login-overlay {
   position: fixed;
   inset: 0;
@@ -137,6 +145,12 @@ canvas {
   gap: 20px;
   z-index: 100;
   color: white;
+}
+
+#login-overlay button {
+  padding: 12px 24px;
+  font-size: 18px;
+  cursor: pointer;
 }
 
 .login-form {
@@ -157,7 +171,9 @@ canvas {
   font-size: 14px;
 }
 
-/* ================= PATIENT MODAL ================= */
+/* ===============================
+   PATIENT MODAL
+=============================== */
 #patient-modal {
   display: none;
   position: fixed;
@@ -181,27 +197,23 @@ canvas {
   justify-content: space-between;
 }
 
-.close-btn { cursor: pointer; }
-
-.patient-card {
-  border: 1px solid #ccc;
-  border-radius: 12px;
-  padding: 8px;
-  margin-bottom: 8px;
-}
-
-.prescription-row {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 4px;
+.close-btn {
+  cursor: pointer;
 }
 
 .patient-card input {
+  width: 100%;
+  margin-bottom: 4px;
   padding: 4px;
   border-radius: 6px;
   border: 1px solid #ccc;
 }
 
+.prescription-row input {
+  padding: 4px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
 .remove-btn {
   background:#ff5a5a;
   color:#fff;
@@ -252,10 +264,7 @@ canvas {
   <div id="dispenser-username"></div>
   <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png">
   <div id="dispenser-medicine"></div>
-  <button id="dispense-btn"
-    style="margin-top:10px;padding:8px 16px;border-radius:8px;border:none;background:#4f6cff;color:#fff;cursor:pointer;">
-    Dispense
-  </button>
+  <button id="dispense-btn" style="margin-top:10px;padding:8px 16px;border-radius:8px;border:none;background:#4f6cff;color:#fff;cursor:pointer;">Dispense</button>
 </div>
 
 <div id="patient-tab">Patients</div>
@@ -268,25 +277,22 @@ canvas {
       <span class="close-btn" id="close-modal">✕</span>
     </div>
     <div id="patient-list"></div>
-    <button id="add-patient"
-      style="margin-top:10px;padding:8px 12px;border-radius:8px;border:none;background:#6b8cff;color:#fff;cursor:pointer;">
-      Add Patient
-    </button>
+    <button id="add-patient" style="margin-top:10px;padding:8px 12px;border-radius:8px;border:none;background:#6b8cff;color:#fff;cursor:pointer;">Add Patient</button>
   </div>
 </div>
 
-<!-- ===== PIXI / LIVE2D (UNCHANGED, REQUIRED) ===== -->
+<!-- PIXI / LIVE2D -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
 <script src="Core/live2dcubismcore.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
 <script src="Main/script.js"></script>
 
-<!-- ===== UI LOGIC ===== -->
+<!-- UI LOGIC -->
 <script>
 const patients = [
-  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime:"2025-10-22T09:30" }] },
-  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", datetime:"2025-10-22T08:45" }] }
+  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime:new Date().toISOString() }] },
+  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", datetime:new Date().toISOString() }] }
 ];
 
 const overlay = document.getElementById("login-overlay");
@@ -302,9 +308,10 @@ const userText = document.getElementById("dispenser-username");
 
 document.getElementById("btn-patient").onclick = () => showForm("patient");
 document.getElementById("btn-staff").onclick = () => showForm("staff");
+
 document.getElementById("btn-visitor").onclick = () => {
-  overlay.style.display="none";
-  tts.style.display="flex";
+  overlay.style.display = "none";
+  tts.style.display = "flex";
 };
 
 function showForm(type){
@@ -316,18 +323,26 @@ document.getElementById("verify-patient").onclick = () => {
   const id = document.getElementById("patient-id").value.trim();
   const name = document.getElementById("patient-name").value.trim().toLowerCase();
   const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
-  if(!p){ document.getElementById("patient-error").textContent="Invalid details"; return; }
+
+  if(!p){
+    document.getElementById("patient-error").textContent = "Invalid details";
+    return;
+  }
 
   overlay.style.display="none";
   tts.style.display="flex";
   dispenser.style.display="flex";
-  userText.textContent=p.name;
-  bottle.src="Samples/Resources/bottle_empty.png";
-  medText.textContent=`${p.prescriptions[0].medicine} – 1 dose`;
+  userText.textContent = p.name;
+
+  bottle.src = "Samples/Resources/bottle_empty.png";
+  medText.textContent = `${p.prescriptions[0].medicine} – 1 dose`;
 };
 
 document.getElementById("login-staff").onclick = () => {
-  if(staff-account.value==="admin" && staff-password.value==="password"){
+  if(
+    document.getElementById("staff-account").value === "admin" &&
+    document.getElementById("staff-password").value === "password"
+  ){
     overlay.style.display="none";
     tts.style.display="flex";
     dispenser.style.display="flex";
@@ -335,23 +350,30 @@ document.getElementById("login-staff").onclick = () => {
     userText.textContent="admin";
     bottle.style.display="none";
     medText.style.display="none";
-  } else staff-error.textContent="Invalid login";
+  } else {
+    document.getElementById("staff-error").textContent="Invalid login";
+  }
 };
 
 // ===== PATIENT PANEL LOGIC =====
 function renderPatients(){
-  patientList.innerHTML="";
+  patientList.innerHTML = "";
   patients.forEach((p,i)=>{
-    const card=document.createElement("div");
-    card.className="patient-card";
-    card.innerHTML=`
-      <b>${p.id}</b>
-      <input value="${p.name}" oninput="patients[${i}].name=this.value">
+    const id = p.id;
+    const card = document.createElement("div");
+    card.className = "patient-card";
+    card.style.border = "1px solid #ccc";
+    card.style.borderRadius = "12px";
+    card.style.padding = "8px";
+    card.style.marginBottom = "8px";
+    card.innerHTML = `
+      <div class="patient-title"><b>${id}</b></div>
+      <input value="${p.name}" style="margin-bottom:4px;width:100%" oninput="patients[${i}].name=this.value">
       ${p.prescriptions.map((rx,j)=>`
-        <div class="prescription-row">
-          <input value="${rx.medicine}" oninput="patients[${i}].prescriptions[${j}].medicine=this.value">
-          <input type="date" value="${rx.datetime.split('T')[0]}">
-          <input type="time" value="${rx.datetime.split('T')[1]}">
+        <div class="prescription-row" style="display:flex;gap:4px;margin-bottom:4px;">
+          <input value="${rx.medicine}" oninput="patients[${i}].prescriptions[${j}].medicine=this.value" style="flex:2">
+          <input type="date" value="${rx.datetime?.split('T')[0] || ''}" onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+(patients[${i}].prescriptions[${j}].datetime?.split('T')[1]||'00:00')">
+          <input type="time" value="${rx.datetime?.split('T')[1] || ''}" onchange="patients[${i}].prescriptions[${j}].datetime=(patients[${i}].prescriptions[${j}].datetime?.split('T')[0]||'')+'T'+this.value">
           <button class="remove-btn" onclick="patients.splice(${i},1);renderPatients()">✕</button>
         </div>
       `).join("")}
@@ -360,25 +382,33 @@ function renderPatients(){
   });
 }
 
-patientTab.onclick=()=>{ renderPatients(); patientModal.style.display="flex"; };
-close-modal.onclick=()=> patientModal.style.display="none";
-
-add-patient.onclick=()=>{
-  const id="P"+String(patients.length+1).padStart(3,"0");
-  patients.push({id,name:"New Patient",prescriptions:[{medicine:"",datetime:new Date().toISOString().slice(0,16)}]});
+document.getElementById("add-patient").onclick = () => {
+  const newId = "P"+String(patients.length+1).padStart(3,"0");
+  patients.push({ id:newId, name:"New Patient", prescriptions:[{medicine:"", datetime:new Date().toISOString().slice(0,16)}] });
   renderPatients();
 };
 
-// ===== DISPENSER =====
-dispense-btn.onclick=()=>{
-  dispense-btn.textContent="Dispensing...";
-  dispense-btn.disabled=true;
+patientTab.onclick = () => {
+  renderPatients();
+  patientModal.style.display="flex";
+};
+
+document.getElementById("close-modal").onclick = () => {
+  patientModal.style.display="none";
+};
+
+// ===== DISPENSER LOGIC =====
+document.getElementById("dispense-btn").onclick = () => {
+  const btn = document.getElementById("dispense-btn");
+  btn.textContent = "Dispensing...";
+  btn.disabled = true;
+
   setTimeout(()=>{
-    bottle.src="https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
-    medText.textContent="Dispensed!";
-    dispense-btn.textContent="Dispense";
-    dispense-btn.disabled=false;
-  },3000);
+    bottle.src = "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
+    medText.textContent = "Dispensed!";
+    btn.textContent = "Dispense";
+    btn.disabled = false;
+  }, 3000);
 };
 </script>
 </body>
