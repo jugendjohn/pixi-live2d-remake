@@ -479,6 +479,15 @@ document.getElementById("dispense-btn").onclick = () => {
   btn.textContent = "Dispensing...";
   btn.disabled = true;
 
+  // Start simulated dispensing animation
+  setTimeout(()=>{
+    bottle.src = "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
+    medText.textContent = "Dispensed!";
+    btn.textContent = "Dispense";
+    btn.disabled = false;
+  }, 3000);
+
+  // Send WebSocket command to backend
   socket.send(JSON.stringify({
     type: "dispense_meds",
     patient: userText.textContent
@@ -497,6 +506,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
