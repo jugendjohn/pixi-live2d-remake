@@ -214,6 +214,7 @@ canvas {
   border-radius: 6px;
   border: 1px solid #ccc;
 }
+
 .remove-btn {
   background:#ff5a5a;
   color:#fff;
@@ -227,73 +228,32 @@ canvas {
 
 <body>
 
-<!-- LOGIN -->
-<div id="login-overlay">
-  <h1>Welcome</h1>
-  <div style="display:flex;gap:16px">
-    <button id="btn-patient">Patient</button>
-    <button id="btn-visitor">Visitor</button>
-    <button id="btn-staff">Staff</button>
-  </div>
-
-  <div class="login-form" id="patient-form">
-    <input id="patient-id" placeholder="Patient ID">
-    <input id="patient-name" placeholder="Patient Name">
-    <button id="verify-patient">Verify</button>
-    <div class="login-error" id="patient-error"></div>
-  </div>
-
-  <div class="login-form" id="staff-form">
-    <input id="staff-account" placeholder="Account">
-    <input id="staff-password" type="password" placeholder="Password">
-    <button id="login-staff">Login</button>
-    <div class="login-error" id="staff-error"></div>
-  </div>
-</div>
-
-<!-- TTS -->
-<div id="tts-panel">
-  <div class="tts-header">Virtual Companion</div>
-  <textarea id="tts-input"></textarea>
-  <button id="tts-button">Speak</button>
-  <div id="tts-output"></div>
-</div>
-
-<!-- DISPENSER -->
+<!-- UI Containers (content generated/managed via JS) -->
+<div id="login-overlay"></div>
+<div id="tts-panel"></div>
 <div id="dispenser-panel">
+  <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png" alt="Bottle">
   <div id="dispenser-username"></div>
-  <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png">
   <div id="dispenser-medicine"></div>
-  <button id="dispense-btn" style="margin-top:10px;padding:8px 16px;border-radius:8px;border:none;background:#4f6cff;color:#fff;cursor:pointer;">Dispense</button>
+  <button id="dispense-btn">Dispense</button>
 </div>
-
 <div id="patient-tab">Patients</div>
-
-<!-- PATIENT MODAL -->
 <div id="patient-modal">
-  <div class="modal">
-    <div class="modal-header">
-      Patient List
-      <span class="close-btn" id="close-modal">✕</span>
-    </div>
-    <div id="patient-list"></div>
-    <button id="add-patient" style="margin-top:10px;padding:8px 12px;border-radius:8px;border:none;background:#6b8cff;color:#fff;cursor:pointer;">Add Patient</button>
-  </div>
+  <div id="patient-list"></div>
+  <button id="add-patient">Add Patient</button>
+  <button id="close-modal">Close</button>
 </div>
 
-<!-- PIXI / LIVE2D / Backend Code -->
+<!-- PIXI & Live2D Scripts -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
 <script src="Core/live2dcubismcore.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
-<script src="Main/Model.js"></script>
-<script src="Main/script.js"></script>
-<script src="Main/ui_Logic.js"></script>
+
+<!-- Modular JS -->
+<script src="ui-logic.js"></script>
+<script src="Model.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
-
-
-
-
-
