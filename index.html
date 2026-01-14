@@ -292,7 +292,7 @@ canvas {
 <!-- UI LOGIC -->
 <script>
 // ======== WEB SOCKET SETUP ========
-const socket = new WebSocket("ws://localhost:8765"); // adjust IP if needed
+const socket = new WebSocket("http://127.0.0.1:8000/docs"); // adjust IP if needed
 
 socket.onopen = () => console.log("Connected to backend");
 
@@ -506,6 +506,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
