@@ -1,202 +1,85 @@
-(async () => {
-  if (typeof PIXI === "undefined") return console.error("❌ PIXI NOT LOADED");
-  if (!PIXI.live2d || !PIXI.live2d.Live2DModel)
-    return console.error("❌ pixi-live2d-display NOT LOADED");
+// ===============================
+// TTS + Word Output + Lip Sync
+// ===============================
+const ttsInput = document.getElementById("tts-input");
+const ttsButton = document.getElementById("tts-button");
+const ttsOutput = document.getElementById("tts-output");
 
-  const { Live2DModel } = PIXI.live2d;
+let voices = [];
+speechSynthesis.onvoiceschanged = () => {
+  voices = speechSynthesis.getVoices();
+};
 
-  const app = new PIXI.Application({
-    background: "#f4f3f2",
-    resizeTo: window,
-    autoStart: true,
-  });
-  document.body.appendChild(app.view);
+function getFemaleVoice() {
+  return voices.find(v =>
+    /female|zira|samantha|victoria|susan/i.test(v.name)
+  );
+}
 
-  const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
+ttsButton.addEventListener("click", () => {
+  const text = ttsInput.value.trim();
+  if (!text) return;
 
-  try {
-    const model = await Live2DModel.from(MODEL_PATH);
+  speechSynthesis.cancel();
 
-    // ===============================
-    // Placement & scale
-    // ===============================
-    model.anchor.set(0.5);
-    const scaleFactor = (app.screen.height / model.height) * 0.9;
-    model.scale.set(scaleFactor);
-    model.x = app.screen.width * 0.25;
-    model.y = app.screen.height / 2;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.pitch = 1;
+  utterance.rate = 1;
+  utterance.voice = getFemaleVoice() || null;
 
-    model.eventMode = "static";
-    model.cursor = "pointer";
+  // Word output
+  const words = text.split(/\s+/);
+  ttsOutput.textContent = "";
+  let wordIndex = 0;
+  const wordTimer = setInterval(() => {
+    if (wordIndex >= words.length) return clearInterval(wordTimer);
+    ttsOutput.textContent += words[wordIndex] + " ";
+    wordIndex++;
+  }, 150);
 
-    app.stage.addChild(model);
+  // ===============================
+  // Word-count based lip sync
+  // ===============================
+  utterance.onstart = () => {
+    const core = window.live2dCore;
+    if (!core) return console.warn("❌ Live2D core not ready");
 
-    model.internalModel.settings.eyeBlink = true;
-    const core = model.internalModel.coreModel;
+    let currentWord = 0;
+    const wordDuration = 300; // ms per word
+    let elapsed = 0;
 
-    console.log("✅ Model loaded");
+    const simTicker = new PIXI.Ticker();
+    simTicker.add((deltaTime) => {
+      elapsed += deltaTime * 16.67; // approx ms per tick
 
-    // ============================================================
-    // Interaction
-    // ============================================================
-    app.stage.eventMode = "static";
-    app.stage.hitArea = app.screen;
+      const cycleTime = elapsed % wordDuration;
+      const half = wordDuration / 2;
+      const mouth = cycleTime < half ? 1.0 : 0.2; // open then close
+      core.setParameterValueById("ParamMouthOpenY", mouth);
 
-    let dragging = false;
-    let dragX = 0;
-    let dragY = 0;
-
-    app.stage.on("pointerdown", (e) => {
-      const x = e.global.x;
-      const y = e.global.y;
-      dragging = true;
-
-      if (model.hitTest("Head", x, y)) {
-        const expressions =
-          model.internalModel.motionManager?.expressionManager?._motions;
-        if (expressions && expressions.size > 0) {
-          const keys = [...expressions.keys()];
-          model.expression(keys[Math.floor(Math.random() * keys.length)]);
+      if (elapsed >= (currentWord + 1) * wordDuration) {
+        currentWord++;
+        if (currentWord >= words.length) {
+          simTicker.stop();
+          // smooth mouth close
+          let t = 0;
+          const closeTicker = new PIXI.Ticker();
+          closeTicker.add(() => {
+            t += 0.1;
+            const v = Math.max(0, 0.2 * (1 - t));
+            core.setParameterValueById("ParamMouthOpenY", v);
+            if (t >= 1) closeTicker.stop();
+          });
+          closeTicker.start();
         }
-        return;
-      }
-
-      if (model.hitTest("Body", x, y)) {
-        if (model.motions?.Idle) {
-          const keys = Object.keys(model.motions.Idle);
-          model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
-        }
       }
     });
+    simTicker.start();
+  };
 
-    app.stage.on("pointermove", (e) => {
-      const x = e.global.x;
-      const y = e.global.y;
+  utterance.onend = () => {
+    clearInterval(wordTimer);
+  };
 
-      if (!dragging) {
-        model.focus(x, y);
-        return;
-      }
-
-      dragX = (x - model.x) / (model.width * 0.5);
-      dragY = (y - model.y) / (model.height * 0.5);
-      dragX = Math.max(-1, Math.min(1, dragX));
-      dragY = Math.max(-1, Math.min(1, dragY));
-    });
-
-    const stopDrag = () => {
-      dragging = false;
-      dragX = 0;
-      dragY = 0;
-    };
-
-    app.stage.on("pointerup", stopDrag);
-    app.stage.on("pointerupoutside", stopDrag);
-
-    // ============================================================
-    // Main Ticker (body follow / subtle motion)
-    // ============================================================
-    const ticker = new PIXI.Ticker();
-    ticker.add(() => {
-      const dx = dragging ? dragX : 0;
-      const dy = dragging ? dragY : 0;
-
-      core.setParameterValueById("ParamAngleX", dx * 30);
-      core.setParameterValueById("ParamAngleY", dy * 30);
-      core.setParameterValueById("ParamAngleZ", dx * dy * -30);
-      core.setParameterValueById("ParamBodyAngleX", dx * 10);
-      core.setParameterValueById("ParamEyeBallX", dx);
-      core.setParameterValueById("ParamEyeBallY", dy);
-
-      model.update(1);
-      app.renderer.render(app.stage);
-    });
-    ticker.start();
-
-    // ============================================================
-    // TTS + Word Output + Simulated Lip Sync (Word-count based)
-    // ============================================================
-    const ttsInput = document.getElementById("tts-input");
-    const ttsButton = document.getElementById("tts-button");
-    const ttsOutput = document.getElementById("tts-output");
-
-    let voices = [];
-    speechSynthesis.onvoiceschanged = () => {
-      voices = speechSynthesis.getVoices();
-    };
-
-    function getFemaleVoice() {
-      return voices.find(v =>
-        /female|zira|samantha|victoria|susan/i.test(v.name)
-      );
-    }
-
-    ttsButton.addEventListener("click", () => {
-      const text = ttsInput.value.trim();
-      if (!text) return;
-
-      speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.pitch = 1;
-      utterance.rate = 1;
-      utterance.voice = getFemaleVoice() || null;
-
-      // Word output
-      const words = text.split(/\s+/);
-      ttsOutput.textContent = "";
-      let wordIndex = 0;
-      const wordTimer = setInterval(() => {
-        if (wordIndex >= words.length) return clearInterval(wordTimer);
-        ttsOutput.textContent += words[wordIndex] + " ";
-        wordIndex++;
-      }, 150);
-
-      // ============================================================
-      // WORD-COUNT BASED LIP SYNC
-      // ============================================================
-      utterance.onstart = () => {
-        let currentWord = 0;
-        const wordDuration = 300; // ms per word
-        let elapsed = 0;
-
-        const simTicker = new PIXI.Ticker();
-        simTicker.add((deltaTime) => {
-          elapsed += deltaTime * 16.67; // approx ms per tick
-
-          const cycleTime = elapsed % wordDuration;
-          const half = wordDuration / 2;
-          const mouth = cycleTime < half ? 1.0 : 0.2; // open then close
-          core.setParameterValueById("ParamMouthOpenY", mouth);
-
-          if (elapsed >= (currentWord + 1) * wordDuration) {
-            currentWord++;
-            if (currentWord >= words.length) {
-              simTicker.stop();
-              // smooth mouth close
-              let t = 0;
-              const closeTicker = new PIXI.Ticker();
-              closeTicker.add(() => {
-                t += 0.1;
-                const v = Math.max(0, 0.2 * (1 - t));
-                core.setParameterValueById("ParamMouthOpenY", v);
-                if (t >= 1) closeTicker.stop();
-              });
-              closeTicker.start();
-            }
-          }
-        });
-        simTicker.start();
-      };
-
-      utterance.onend = () => {
-        clearInterval(wordTimer);
-      };
-
-      speechSynthesis.speak(utterance);
-    });
-
-  } catch (e) {
-    console.error("❌ MODEL LOAD ERROR:", e);
-  }
-})();
+  speechSynthesis.speak(utterance);
+});
