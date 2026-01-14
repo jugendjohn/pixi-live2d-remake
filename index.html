@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Virtual Companion Test</title>
+<title>Receptionist Test</title>
 
 <style>
 html, body {
@@ -214,7 +214,6 @@ canvas {
   border-radius: 6px;
   border: 1px solid #ccc;
 }
-
 .remove-btn {
   background:#ff5a5a;
   color:#fff;
@@ -228,33 +227,220 @@ canvas {
 
 <body>
 
-<!-- UI Containers (content generated/managed via JS) -->
-<div id="login-overlay"></div>
-<div id="tts-panel"></div>
-<div id="dispenser-panel">
-  <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png" alt="Bottle">
-  <div id="dispenser-username"></div>
-  <div id="dispenser-medicine"></div>
-  <button id="dispense-btn">Dispense</button>
-</div>
-<div id="patient-tab">Patients</div>
-<div id="patient-modal">
-  <div id="patient-list"></div>
-  <button id="add-patient">Add Patient</button>
-  <button id="close-modal">Close</button>
+<!-- LOGIN -->
+<div id="login-overlay">
+  <h1>Welcome</h1>
+  <div style="display:flex;gap:16px">
+    <button id="btn-patient">Patient</button>
+    <button id="btn-visitor">Visitor</button>
+    <button id="btn-staff">Staff</button>
+  </div>
+
+  <div class="login-form" id="patient-form">
+    <input id="patient-id" placeholder="Patient ID">
+    <input id="patient-name" placeholder="Patient Name">
+    <button id="verify-patient">Verify</button>
+    <div class="login-error" id="patient-error"></div>
+  </div>
+
+  <div class="login-form" id="staff-form">
+    <input id="staff-account" placeholder="Account">
+    <input id="staff-password" type="password" placeholder="Password">
+    <button id="login-staff">Login</button>
+    <div class="login-error" id="staff-error"></div>
+  </div>
 </div>
 
-<!-- PIXI & Live2D Scripts -->
+<!-- TTS -->
+<div id="tts-panel">
+  <div class="tts-header">Virtual Companion</div>
+  <textarea id="tts-input"></textarea>
+  <button id="tts-button">Speak</button>
+  <div id="tts-output"></div>
+</div>
+
+<!-- DISPENSER -->
+<div id="dispenser-panel">
+  <div id="dispenser-username"></div>
+  <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png">
+  <div id="dispenser-medicine"></div>
+  <button id="dispense-btn" style="margin-top:10px;padding:8px 16px;border-radius:8px;border:none;background:#4f6cff;color:#fff;cursor:pointer;">Dispense</button>
+</div>
+
+<div id="patient-tab">Patients</div>
+
+<!-- PATIENT MODAL -->
+<div id="patient-modal">
+  <div class="modal">
+    <div class="modal-header">
+      Patient List
+      <span class="close-btn" id="close-modal">✕</span>
+    </div>
+    <div id="patient-list"></div>
+    <button id="add-patient" style="margin-top:10px;padding:8px 12px;border-radius:8px;border:none;background:#6b8cff;color:#fff;cursor:pointer;">Add Patient</button>
+  </div>
+</div>
+
+<!-- PIXI / LIVE2D -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
 <script src="Core/live2dcubismcore.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js"></script>
+<script src="Main/script.js"></script>
 
-<!-- Modular JS -->
-<script src="Main/ui-logic.js"></script>
-<script src="Main/Model.js"></script>
-<script src="sMain/cript.js"></script>
+<!-- UI LOGIC -->
+<script>
+const patients = [
+  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime: "2025-10-22T09:30" }] },
+  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", datetime: "2025-10-22T08:45" }] }
+];
 
+const overlay = document.getElementById("login-overlay");
+const tts = document.getElementById("tts-panel");
+const dispenser = document.getElementById("dispenser-panel");
+const patientTab = document.getElementById("patient-tab");
+const patientModal = document.getElementById("patient-modal");
+const patientList = document.getElementById("patient-list");
+
+const bottle = document.getElementById("dispenser-bottle");
+const medText = document.getElementById("dispenser-medicine");
+const userText = document.getElementById("dispenser-username");
+
+document.getElementById("btn-patient").onclick = () => showForm("patient");
+document.getElementById("btn-staff").onclick = () => showForm("staff");
+
+document.getElementById("btn-visitor").onclick = () => {
+  overlay.style.display = "none";
+  tts.style.display = "flex";
+};
+
+function showForm(type){
+  document.getElementById("patient-form").style.display = type==="patient"?"flex":"none";
+  document.getElementById("staff-form").style.display = type==="staff"?"flex":"none";
+}
+
+document.getElementById("verify-patient").onclick = () => {
+  const id = document.getElementById("patient-id").value.trim();
+  const name = document.getElementById("patient-name").value.trim().toLowerCase();
+  const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
+
+  if(!p){
+    document.getElementById("patient-error").textContent = "Invalid details";
+    return;
+  }
+
+  overlay.style.display="none";
+  tts.style.display="flex";
+  dispenser.style.display="flex";
+  userText.textContent = p.name;
+
+  bottle.src = "Samples/Resources/bottle_empty.png";
+  medText.textContent = `${p.prescriptions[0].medicine} – 1 dose`;
+};
+
+document.getElementById("login-staff").onclick = () => {
+  if(
+    document.getElementById("staff-account").value === "admin" &&
+    document.getElementById("staff-password").value === "password"
+  ){
+    overlay.style.display="none";
+    tts.style.display="flex";
+    dispenser.style.display="flex";
+    patientTab.style.display="block";
+    userText.textContent="admin";
+    bottle.style.display="none";
+    medText.style.display="none";
+  } else {
+    document.getElementById("staff-error").textContent="Invalid login";
+  }
+};
+
+// ===== PATIENT PANEL LOGIC =====
+function renderPatients(){
+  patientList.innerHTML = "";
+
+  patients.forEach((p,i)=>{
+    const card = document.createElement("div");
+    card.style.background = "#fff";
+    card.style.border = "1px solid #ddd";
+    card.style.borderRadius = "14px";
+    card.style.padding = "12px";
+    card.style.marginBottom = "12px";
+
+    card.innerHTML = `
+      <div style="font-weight:700;margin-bottom:6px;">P${p.id}</div>
+
+      <input
+        value="${p.name}"
+        oninput="patients[${i}].name=this.value"
+        style="width:100%;padding:8px;border-radius:10px;border:1px solid #ccc;margin-bottom:10px;"
+      >
+
+      ${p.prescriptions.map((rx,j)=>{
+        const [date,time] = rx.datetime.split("T");
+        return `
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
+            <input
+              value="${rx.medicine}"
+              oninput="patients[${i}].prescriptions[${j}].medicine=this.value"
+              style="flex:2;padding:8px;border-radius:10px;border:1px solid #ccc;"
+            >
+
+            <input
+              type="date"
+              value="${date}"
+              onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+patients[${i}].prescriptions[${j}].datetime.split('T')[1]"
+              style="padding:8px;border-radius:10px;border:1px solid #ccc;"
+            >
+
+            <input
+              type="time"
+              value="${time}"
+              onchange="patients[${i}].prescriptions[${j}].datetime=patients[${i}].prescriptions[${j}].datetime.split('T')[0]+'T'+this.value"
+              style="padding:8px;border-radius:10px;border:1px solid #ccc;"
+            >
+
+            <button
+              onclick="patients.splice(${i},1);renderPatients()"
+              style="background:#ff5a5a;color:#fff;border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;"
+            >✕</button>
+          </div>
+        `;
+      }).join("")}
+    `;
+
+    patientList.appendChild(card);
+  });
+}
+
+document.getElementById("add-patient").onclick = () => {
+  const newId = "P"+String(patients.length+1).padStart(3,"0");
+  patients.push({ id:newId, name:"New Patient", prescriptions:[{medicine:"", datetime:new Date().toISOString().slice(0,16)}] });
+  renderPatients();
+};
+
+patientTab.onclick = () => {
+  renderPatients();
+  patientModal.style.display="flex";
+};
+
+document.getElementById("close-modal").onclick = () => {
+  patientModal.style.display="none";
+};
+
+// ===== DISPENSER LOGIC =====
+document.getElementById("dispense-btn").onclick = () => {
+  const btn = document.getElementById("dispense-btn");
+  btn.textContent = "Dispensing...";
+  btn.disabled = true;
+
+  setTimeout(()=>{
+    bottle.src = "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
+    medText.textContent = "Dispensed!";
+    btn.textContent = "Dispense";
+    btn.disabled = false;
+  }, 3000);
+};
+</script>
 </body>
 </html>
-
