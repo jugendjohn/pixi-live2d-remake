@@ -51,30 +51,39 @@
     let dragX = 0;
     let dragY = 0;
 
-    model.on("pointerdown", (e) => {
-      const x = e.data.global.x;
-      const y = e.data.global.y;
-      dragging = true;
+   model.on("pointerdown", (e) => {
+     const x = e.data.global.x;
+     const y = e.data.global.y;
 
-      // Head click: random expression
-      if (model.hitTest("Head", x, y)) {
-        const expressions =
-          model.internalModel.motionManager?.expressionManager?._motions;
-        if (expressions && expressions.size > 0) {
-          const keys = [...expressions.keys()];
-          model.expression(keys[Math.floor(Math.random() * keys.length)]);
-        }
-        return;
-      }
+     dragging = true;
 
-      // Body click: idle motion
-      if (model.hitTest("Body", x, y)) {
-        if (model.motions?.Idle) {
-          const keys = Object.keys(model.motions.Idle);
-          model.motion("Idle", keys[Math.floor(Math.random() * keys.length)]);
-        }
-      }
-    });
+     // Head click: random expression
+     if (model.hitTest("Head", x, y)) {
+       const expressions =
+         model.internalModel.motionManager?.expressionManager?._motions;
+       if (expressions && expressions.size > 0) {
+         const keys = [...expressions.keys()];
+         model.expression(keys[Math.floor(Math.random() * keys.length)]);
+       }
+       return;
+     }
+     
+     // Body click: play TapBody gestures (without sound)
+     if (model.hitTest("Body", x, y)) {
+       const tapBodyMotions = model.motions?.TapBody;
+       if (tapBodyMotions && tapBodyMotions.length > 0) {
+         // Pick a random TapBody motion
+         const motion =
+           tapBodyMotions[Math.floor(Math.random() * tapBodyMotions.length)];
+         // Load motion from file
+         model.motion(
+           "TapBody",
+           motion.File, // path from JSON
+           { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+         );
+       }
+     }
+   });
 
     model.on("pointermove", (e) => {
       const x = e.data.global.x;
