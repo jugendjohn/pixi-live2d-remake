@@ -114,9 +114,10 @@
     ticker.start();
 
     // ============================================================
-    // Expose core for external scripts (like TTS)
+    // Expose core for TTS script
     // ============================================================
     window.live2dCore = core;
+
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
