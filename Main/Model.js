@@ -10,6 +10,14 @@
     resizeTo: window,
     autoStart: true,
   });
+
+  // Insert canvas behind everything and allow clicks through
+  app.view.style.position = "fixed";
+  app.view.style.top = "0";
+  app.view.style.left = "0";
+  app.view.style.width = "100vw";
+  app.view.style.height = "100vh";
+  app.view.style.pointerEvents = "none"; // allow HTML buttons to be clickable
   document.body.appendChild(app.view);
 
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
@@ -26,7 +34,7 @@
     model.x = app.screen.width * 0.25;
     model.y = app.screen.height / 2;
 
-    model.eventMode = "static";
+    model.eventMode = "static"; // model reacts to clicks
     model.cursor = "pointer";
 
     app.stage.addChild(model);
@@ -37,20 +45,18 @@
     console.log("✅ Model loaded");
 
     // ============================================================
-    // Interaction (drag + click)
+    // Interaction (drag + click on model only)
     // ============================================================
-    app.stage.eventMode = "static";
-    app.stage.hitArea = app.screen;
-
     let dragging = false;
     let dragX = 0;
     let dragY = 0;
 
-    app.stage.on("pointerdown", (e) => {
-      const x = e.global.x;
-      const y = e.global.y;
+    model.on("pointerdown", (e) => {
+      const x = e.data.global.x;
+      const y = e.data.global.y;
       dragging = true;
 
+      // Head click: random expression
       if (model.hitTest("Head", x, y)) {
         const expressions =
           model.internalModel.motionManager?.expressionManager?._motions;
@@ -61,6 +67,7 @@
         return;
       }
 
+      // Body click: idle motion
       if (model.hitTest("Body", x, y)) {
         if (model.motions?.Idle) {
           const keys = Object.keys(model.motions.Idle);
@@ -69,9 +76,9 @@
       }
     });
 
-    app.stage.on("pointermove", (e) => {
-      const x = e.global.x;
-      const y = e.global.y;
+    model.on("pointermove", (e) => {
+      const x = e.data.global.x;
+      const y = e.data.global.y;
 
       if (!dragging) {
         model.focus(x, y);
@@ -90,8 +97,8 @@
       dragY = 0;
     };
 
-    app.stage.on("pointerup", stopDrag);
-    app.stage.on("pointerupoutside", stopDrag);
+    model.on("pointerup", stopDrag);
+    model.on("pointerupoutside", stopDrag);
 
     // ============================================================
     // Main Ticker (body follow / subtle motion)
