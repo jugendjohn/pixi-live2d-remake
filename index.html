@@ -308,7 +308,8 @@ socket.onmessage = (event) => {
             break;
 
         case "tts_status":
-            document.getElementById("tts-output").textContent = data.status;
+            document.getElementById("tts-output").textContent = data.status; // update the TTS output panel
+            speakWithModel(data.status); // call local speech synthesis + animation
             break;
 
         case "dispense_status":
@@ -324,7 +325,23 @@ socket.onmessage = (event) => {
             break;
     }
 };
+  
+// ======== LOCAL SPEECH + LIVE2D FUNCTION ========
+function speakWithModel(text){
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1;   // normal speaking speed
+    utter.pitch = 1.1; // slightly higher pitch for natural voice
+    speechSynthesis.speak(utter); // speaks the text
 
+    // OPTIONAL: trigger Live2D mouth param if you have it
+    if(window.model){
+        model.internalModel.coreModel.setParameterValueById("ParamMouthOpenY", 1); // open mouth
+        setTimeout(()=>{
+            model.internalModel.coreModel.setParameterValueById("ParamMouthOpenY", 0); // close mouth after 300ms
+        }, 300);
+    }
+}
+  
 // ======== DATA & ELEMENTS ========
 const patients = [
   { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime: "2025-10-22T09:30" }] },
@@ -506,6 +523,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
