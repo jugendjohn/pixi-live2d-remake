@@ -378,7 +378,7 @@ function speakWithModel(text){
     const model = window.model;
     const core = model.internalModel.coreModel;
 
-    // Random motion
+    // --- Play random motion on TTS ---
     playRandomMotion();
 
     const utter = new SpeechSynthesisUtterance(text);
@@ -386,19 +386,23 @@ function speakWithModel(text){
     utter.pitch = 1.1;
 
     const words = text.split(/\s+/).length;
-    const duration = words * 0.35 * 1000; // 0.35s per word
+    const duration = words * 0.35 * 1000; // estimated speech duration
 
-    let mouthStart = Date.now();
-    const mouthInterval = setInterval(()=>{
-        if(Date.now() - mouthStart > duration){
+    let startTime = Date.now();
+    let angle = 0;
+
+    const mouthInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        if(elapsed > duration){
             clearInterval(mouthInterval);
             core.setParameterValueById("ParamMouthOpenY", 0);
             return;
         }
-        // Random small mouth openings
-        const open = Math.random() * 0.7 + 0.3;
+        // Smooth sine wave oscillation between 0.4 and 1.0
+        const open = 0.7 * Math.abs(Math.sin(angle)) + 0.3;
         core.setParameterValueById("ParamMouthOpenY", open);
-    }, 50);
+        angle += 0.5; // speed of mouth opening
+    }, 40); // update every 40ms for smoother animation
 
     utter.onend = () => {
         clearInterval(mouthInterval);
@@ -424,6 +428,7 @@ function speakWithModel(text){
         );
     }
 }
+
 // ======== DATA & ELEMENTS ========
 const patients = [
   { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime: "2025-10-22T09:30" }] },
@@ -606,6 +611,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
