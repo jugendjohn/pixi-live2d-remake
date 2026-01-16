@@ -402,7 +402,7 @@ function speakWithModel(text){
         const open = 0.7 * Math.abs(Math.sin(angle)) + 0.3;
         core.setParameterValueById("ParamMouthOpenY", open);
         angle += 0.5; // speed of mouth opening
-    }, 20); // update every 40ms for smoother animation
+    }, 10); // update every 40ms for smoother animation
 
     utter.onend = () => {
         clearInterval(mouthInterval);
@@ -611,6 +611,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
