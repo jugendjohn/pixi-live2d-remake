@@ -375,16 +375,36 @@ socket.onmessage = (event) => {
 // ======== LOCAL SPEECH + LIVE2D FUNCTION ========
 function speakWithModel(text){
     const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1;   // normal speaking speed
-    utter.pitch = 1.1; // slightly higher pitch for natural voice
-    speechSynthesis.speak(utter); // speaks the text
+    utter.rate = 1;   
+    utter.pitch = 1.1; 
+    speechSynthesis.speak(utter); 
 
-    // OPTIONAL: trigger Live2D mouth param if you have it
     if(window.model){
-        model.internalModel.coreModel.setParameterValueById("ParamMouthOpenY", 1); // open mouth
+        const core = window.model.internalModel.coreModel;
+
+        // Open mouth while speaking
+        core.setParameterValueById("ParamMouthOpenY", 1); 
         setTimeout(()=>{
-            model.internalModel.coreModel.setParameterValueById("ParamMouthOpenY", 0); // close mouth after 300ms
+            core.setParameterValueById("ParamMouthOpenY", 0);
         }, 300);
+
+        // --- NEW: Play a random motion from the model ---
+        if(window.model.motions){
+            const motionCategories = Object.keys(window.model.motions);
+            if(motionCategories.length > 0){
+                // Pick a random category
+                const cat = motionCategories[Math.floor(Math.random() * motionCategories.length)];
+                const motions = window.model.motions[cat];
+                if(motions.length > 0){
+                    const motion = motions[Math.floor(Math.random() * motions.length)];
+                    window.model.motion(
+                        cat,
+                        motion.File,
+                        { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+                    );
+                }
+            }
+        }
     }
 }
   
@@ -570,6 +590,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
