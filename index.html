@@ -378,15 +378,30 @@ function speakWithModel(text){
     const model = window.model;
     const core = model.internalModel.coreModel;
 
-    // --- Play random motion on TTS ---
-    playRandomMotion();
+    // --- Play a random motion ---
+    if(model.motions){
+        const categories = Object.keys(model.motions);
+        if(categories.length > 0){
+            const cat = categories[Math.floor(Math.random() * categories.length)];
+            const motions = model.motions[cat];
+            if(motions.length > 0){
+                const motion = motions[Math.floor(Math.random() * motions.length)];
+                model.motion(
+                    cat,
+                    motion.File,
+                    { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+                );
+            }
+        }
+    }
 
+    // --- Mouth animation ---
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 1;
     utter.pitch = 1.1;
 
     const words = text.split(/\s+/).length;
-    const duration = words * 0.35 * 1000; // estimated speech duration
+    const duration = words * 0.35 * 1000; // approximate duration
 
     let startTime = Date.now();
     let angle = 0;
@@ -398,11 +413,11 @@ function speakWithModel(text){
             core.setParameterValueById("ParamMouthOpenY", 0);
             return;
         }
-        // Smooth sine wave oscillation between 0.4 and 1.0
-        const open = 0.7 * Math.abs(Math.sin(angle)) + 0.3;
+        // --- full jaw range 0 → 1.0 ---
+        const open = Math.abs(Math.sin(angle)); // range 0 → 1
         core.setParameterValueById("ParamMouthOpenY", open);
-        angle += 0.5; // speed of mouth opening
-    }, 10); // update every 40ms for smoother animation
+        angle += 0.7; // faster oscillation
+    }, 25); // update every 25ms for smoother animation
 
     utter.onend = () => {
         clearInterval(mouthInterval);
@@ -410,23 +425,6 @@ function speakWithModel(text){
     };
 
     speechSynthesis.speak(utter);
-
-    function playRandomMotion(){
-        if(!model.motions) return;
-        const categories = Object.keys(model.motions);
-        if(categories.length === 0) return;
-
-        const cat = categories[Math.floor(Math.random() * categories.length)];
-        const motions = model.motions[cat];
-        if(motions.length === 0) return;
-
-        const motion = motions[Math.floor(Math.random() * motions.length)];
-        model.motion(
-            cat,
-            motion.File,
-            { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
-        );
-    }
 }
 
 // ======== DATA & ELEMENTS ========
@@ -611,6 +609,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
