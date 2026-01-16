@@ -97,6 +97,44 @@ canvas {
 }
 
 /* ===============================
+   STAFF TTS PANEL
+=============================== */
+#staff-tts-panel {
+  position: absolute;
+  bottom: 30px;
+  left: 35%;
+  width: 400px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  padding: 20px;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 15;
+}
+
+#staff-tts-panel textarea {
+  min-height: 100px;
+  resize: none;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+#staff-tts-panel button {
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg,#6b8cff,#4f6cff);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+  
+/* ===============================
    DISPENSER PANEL
 =============================== */
 #dispenser-panel {
@@ -259,6 +297,14 @@ canvas {
   <div id="tts-output"></div>
 </div>
 
+<!-- STAFF TTS PANEL -->
+<div id="staff-tts-panel">
+  <div class="tts-header">Staff TTS Control</div>
+  <textarea id="staff-tts-input" placeholder="Enter text to speak">
+  </textarea>
+  <button id="staff-tts-button">Speak</button>
+</div>
+  
 <!-- DISPENSER -->
 <div id="dispenser-panel">
   <div id="dispenser-username"></div>
@@ -412,6 +458,7 @@ document.getElementById("login-staff").onclick = () => {
     userText.textContent="admin";
     bottle.style.display="none";
     medText.style.display="none";
+    document.getElementById("staff-tts-panel").style.display = "flex";
   } else {
     document.getElementById("staff-error").textContent="Invalid login";
   }
@@ -523,6 +570,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
