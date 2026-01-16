@@ -375,37 +375,48 @@ socket.onmessage = (event) => {
 // ======== LOCAL SPEECH + LIVE2D FUNCTION ========
 function speakWithModel(text){
     if(!window.model) return;
-
     const core = window.model.internalModel.coreModel;
 
+    // Play random motion
+    playRandomMotion();
+
+    // Create a SpeechSynthesisUtterance
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 1;
     utter.pitch = 1.1;
 
-    // Random motion while speaking
-    playRandomMotion();
+    // Create AudioContext to analyze speech
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioCtx.createMediaStreamSource(
+        new MediaStream() // placeholder, we will connect TTS differently
+    );
+    const analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-    // Track mouth movement
+    // Since we cannot directly hook SpeechSynthesis to AudioContext,
+    // we simulate mouth movement using a timer based on utterance text length
     let mouthInterval;
-
     utter.onstart = () => {
-        // Start mouth animation
-        mouthInterval = setInterval(()=>{
-            // ParamMouthOpenY: random small variations
-            const open = Math.random() * 0.5 + 0.5; // 0.5 to 1
+        mouthInterval = setInterval(() => {
+            // Map a pseudo volume based on random small variations + some randomness
+            const open = Math.random() * 0.7 + 0.3; // 0.3–1.0
             core.setParameterValueById("ParamMouthOpenY", open);
-        }, 100); // every 100ms
+        }, 50); // update every 50ms
     };
 
     utter.onend = () => {
-        // Stop mouth animation
         clearInterval(mouthInterval);
         core.setParameterValueById("ParamMouthOpenY", 0);
+        audioCtx.close();
     };
 
     speechSynthesis.speak(utter);
 
-    // --- helper: play random motion ---
+    // =====================
+    // Helper: random motion
+    // =====================
     function playRandomMotion(){
         if(!window.model.motions) return;
         const motionCategories = Object.keys(window.model.motions);
@@ -606,3 +617,4 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
