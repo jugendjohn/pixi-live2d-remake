@@ -375,64 +375,42 @@ socket.onmessage = (event) => {
 // ======== LOCAL SPEECH + LIVE2D FUNCTION ========
 function speakWithModel(text){
     if(!window.model) return;
-    const core = window.model.internalModel.coreModel;
+    const model = window.model;
+    const core = model.internalModel.coreModel;
 
-    // Play random motion
-    playRandomMotion();
+    // --- Play random motion on TTS ---
+    if(model.motions){
+        const categories = Object.keys(model.motions);
+        if(categories.length > 0){
+            const cat = categories[Math.floor(Math.random() * categories.length)];
+            const motions = model.motions[cat];
+            if(motions.length > 0){
+                const motion = motions[Math.floor(Math.random() * motions.length)];
+                model.motion(
+                    cat,
+                    motion.File,
+                    { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+                );
+            }
+        }
+    }
 
-    // Create a SpeechSynthesisUtterance
+    // --- Mouth animation while TTS ---
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 1;
     utter.pitch = 1.1;
 
-    // Create AudioContext to analyze speech
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioCtx.createMediaStreamSource(
-        new MediaStream() // placeholder, we will connect TTS differently
-    );
-    const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    source.connect(analyser);
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    // Since we cannot directly hook SpeechSynthesis to AudioContext,
-    // we simulate mouth movement using a timer based on utterance text length
-    let mouthInterval;
-    utter.onstart = () => {
-        mouthInterval = setInterval(() => {
-            // Map a pseudo volume based on random small variations + some randomness
-            const open = Math.random() * 0.7 + 0.3; // 0.3–1.0
-            core.setParameterValueById("ParamMouthOpenY", open);
-        }, 50); // update every 50ms
-    };
+    let mouthInterval = setInterval(()=>{
+        const open = Math.random() * 0.7 + 0.3; // 0.3–1.0
+        core.setParameterValueById("ParamMouthOpenY", open);
+    }, 80); // 80ms for smooth oscillation
 
     utter.onend = () => {
         clearInterval(mouthInterval);
         core.setParameterValueById("ParamMouthOpenY", 0);
-        audioCtx.close();
     };
 
     speechSynthesis.speak(utter);
-
-    // =====================
-    // Helper: random motion
-    // =====================
-    function playRandomMotion(){
-        if(!window.model.motions) return;
-        const motionCategories = Object.keys(window.model.motions);
-        if(motionCategories.length === 0) return;
-
-        const cat = motionCategories[Math.floor(Math.random() * motionCategories.length)];
-        const motions = window.model.motions[cat];
-        if(motions.length === 0) return;
-
-        const motion = motions[Math.floor(Math.random() * motions.length)];
-        window.model.motion(
-            cat,
-            motion.File,
-            { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
-        );
-    }
 }
   
 // ======== DATA & ELEMENTS ========
@@ -617,4 +595,5 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
