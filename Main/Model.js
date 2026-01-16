@@ -11,13 +11,13 @@
     autoStart: true,
   });
 
-  // Insert canvas behind everything and allow clicks through
+  // Canvas behind UI, allow clicks
   app.view.style.position = "fixed";
   app.view.style.top = "0";
   app.view.style.left = "0";
   app.view.style.width = "100vw";
   app.view.style.height = "100vh";
-  app.view.style.pointerEvents = "auto";
+  app.view.style.pointerEvents = "auto"; // <-- allow clicks
   document.body.appendChild(app.view);
 
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
@@ -25,16 +25,16 @@
   try {
     const model = await Live2DModel.from(MODEL_PATH);
 
-    // ===============================
+    // =================================================
     // Placement & scale
-    // ===============================
+    // =================================================
     model.anchor.set(0.5);
     const scaleFactor = (app.screen.height / model.height) * 0.9;
     model.scale.set(scaleFactor);
     model.x = app.screen.width * 0.25;
     model.y = app.screen.height / 2;
 
-    model.eventMode = "static"; // model reacts to clicks
+    model.eventMode = "static"; // pointer events
     model.cursor = "pointer";
 
     app.stage.addChild(model);
@@ -42,76 +42,70 @@
     model.internalModel.settings.eyeBlink = true;
     const core = model.internalModel.coreModel;
 
+    // Expose globally for TTS
+    window.model = model;
+    window.live2dCore = core;
+
     console.log("✅ Model loaded");
 
-    // ============================================================
-    // Interaction (drag + click on model only)
-    // ============================================================
+    // =================================================
+    // Head / Body clicks
+    // =================================================
     let dragging = false;
-    let dragX = 0;
-    let dragY = 0;
+    let dragX = 0, dragY = 0;
 
-   model.on("pointerdown", (e) => {
-     const x = e.data.global.x;
-     const y = e.data.global.y;
+    const stopDrag = () => { dragging = false; dragX = 0; dragY = 0; };
 
-     dragging = true;
-
-     // Head click: random expression
-     if (model.hitTest("Head", x, y)) {
-       const expressions =
-         model.internalModel.motionManager?.expressionManager?._motions;
-       if (expressions && expressions.size > 0) {
-         const keys = [...expressions.keys()];
-         model.expression(keys[Math.floor(Math.random() * keys.length)]);
-       }
-       return;
-     }
-     
-     // Body click: play TapBody gestures (without sound)
-     if (model.hitTest("Body", x, y)) {
-       const tapBodyMotions = model.motions?.TapBody;
-       if (tapBodyMotions && tapBodyMotions.length > 0) {
-         // Pick a random TapBody motion
-         const motion =
-           tapBodyMotions[Math.floor(Math.random() * tapBodyMotions.length)];
-         // Load motion from file
-         model.motion(
-           "TapBody",
-           motion.File, // path from JSON
-           { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
-         );
-       }
-     }
-   });
-
-    model.on("pointermove", (e) => {
+    model.on("pointerdown", e => {
       const x = e.data.global.x;
       const y = e.data.global.y;
 
+      dragging = true;
+
+      // Head click: random expression
+      if (model.hitTest("Head", x, y)) {
+        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
+        if (expressions && expressions.size > 0) {
+          const keys = [...expressions.keys()];
+          const key = keys[Math.floor(Math.random() * keys.length)];
+          model.expression(key);
+        }
+        return;
+      }
+
+      // Body click: random TapBody motion
+      if (model.hitTest("Body", x, y)) {
+        const tapBodyMotions = model.motions?.TapBody;
+        if (tapBodyMotions && tapBodyMotions.length > 0) {
+          const motion = tapBodyMotions[Math.floor(Math.random() * tapBodyMotions.length)];
+          model.motion(
+            "TapBody",
+            motion.File,
+            { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+          );
+        }
+      }
+    });
+
+    model.on("pointermove", e => {
+      const x = e.data.global.x;
+      const y = e.data.global.y;
       if (!dragging) {
         model.focus(x, y);
         return;
       }
-
       dragX = (x - model.x) / (model.width * 0.5);
       dragY = (y - model.y) / (model.height * 0.5);
       dragX = Math.max(-1, Math.min(1, dragX));
       dragY = Math.max(-1, Math.min(1, dragY));
     });
 
-    const stopDrag = () => {
-      dragging = false;
-      dragX = 0;
-      dragY = 0;
-    };
-
     model.on("pointerup", stopDrag);
     model.on("pointerupoutside", stopDrag);
 
-    // ============================================================
-    // Main Ticker (body follow / subtle motion)
-    // ============================================================
+    // =================================================
+    // Ticker: subtle body/eye motion
+    // =================================================
     const ticker = new PIXI.Ticker();
     ticker.add(() => {
       const dx = dragging ? dragX : 0;
@@ -128,11 +122,6 @@
       app.renderer.render(app.stage);
     });
     ticker.start();
-
-    // ============================================================
-    // Expose core for TTS script
-    // ============================================================
-    window.live2dCore = core;
 
   } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
