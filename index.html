@@ -378,32 +378,27 @@ function speakWithModel(text){
     const model = window.model;
     const core = model.internalModel.coreModel;
 
-    // --- Play random motion on TTS ---
-    if(model.motions){
-        const categories = Object.keys(model.motions);
-        if(categories.length > 0){
-            const cat = categories[Math.floor(Math.random() * categories.length)];
-            const motions = model.motions[cat];
-            if(motions.length > 0){
-                const motion = motions[Math.floor(Math.random() * motions.length)];
-                model.motion(
-                    cat,
-                    motion.File,
-                    { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
-                );
-            }
-        }
-    }
+    // Random motion
+    playRandomMotion();
 
-    // --- Mouth animation while TTS ---
     const utter = new SpeechSynthesisUtterance(text);
     utter.rate = 1;
     utter.pitch = 1.1;
 
-    let mouthInterval = setInterval(()=>{
-        const open = Math.random() * 0.7 + 0.3; // 0.3–1.0
+    const words = text.split(/\s+/).length;
+    const duration = words * 0.35 * 1000; // 0.35s per word
+
+    let mouthStart = Date.now();
+    const mouthInterval = setInterval(()=>{
+        if(Date.now() - mouthStart > duration){
+            clearInterval(mouthInterval);
+            core.setParameterValueById("ParamMouthOpenY", 0);
+            return;
+        }
+        // Random small mouth openings
+        const open = Math.random() * 0.7 + 0.3;
         core.setParameterValueById("ParamMouthOpenY", open);
-    }, 80); // 80ms for smooth oscillation
+    }, 50);
 
     utter.onend = () => {
         clearInterval(mouthInterval);
@@ -411,8 +406,24 @@ function speakWithModel(text){
     };
 
     speechSynthesis.speak(utter);
+
+    function playRandomMotion(){
+        if(!model.motions) return;
+        const categories = Object.keys(model.motions);
+        if(categories.length === 0) return;
+
+        const cat = categories[Math.floor(Math.random() * categories.length)];
+        const motions = model.motions[cat];
+        if(motions.length === 0) return;
+
+        const motion = motions[Math.floor(Math.random() * motions.length)];
+        model.motion(
+            cat,
+            motion.File,
+            { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+        );
+    }
 }
-  
 // ======== DATA & ELEMENTS ========
 const patients = [
   { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime: "2025-10-22T09:30" }] },
@@ -595,5 +606,6 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
