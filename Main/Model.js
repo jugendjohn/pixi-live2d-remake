@@ -17,7 +17,7 @@
   app.view.style.left = "0";
   app.view.style.width = "100vw";
   app.view.style.height = "100vh";
-  app.view.style.pointerEvents = "auto"; // <-- allow clicks
+  app.view.style.pointerEvents = "auto"; 
   document.body.appendChild(app.view);
 
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
@@ -34,7 +34,7 @@
     model.x = app.screen.width * 0.25;
     model.y = app.screen.height / 2;
 
-    model.eventMode = "static"; // pointer events
+    model.eventMode = "static"; 
     model.cursor = "pointer";
 
     app.stage.addChild(model);
@@ -42,14 +42,14 @@
     model.internalModel.settings.eyeBlink = true;
     const core = model.internalModel.coreModel;
 
-    // Expose globally for TTS
+    // Expose globally
     window.model = model;
     window.live2dCore = core;
 
     console.log("✅ Model loaded");
 
     // =================================================
-    // Head / Body clicks
+    // Interaction: Head / Body / Drag
     // =================================================
     let dragging = false;
     let dragX = 0, dragY = 0;
@@ -57,73 +57,74 @@
     const stopDrag = () => { dragging = false; dragX = 0; dragY = 0; };
 
     model.on("pointerdown", e => {
-      const x = e.data.global.x;
-      const y = e.data.global.y;
+        const x = e.data.global.x;
+        const y = e.data.global.y;
 
-      dragging = true;
+        dragging = true;
 
-      // Head click: random expression
-      if (model.hitTest("Head", x, y)) {
-        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
-        if (expressions && expressions.size > 0) {
-          const keys = [...expressions.keys()];
-          const key = keys[Math.floor(Math.random() * keys.length)];
-          model.expression(key);
+        // Head click: random expression
+        if(model.hitTest("Head", x, y)){
+            const expressions = model.internalModel.motionManager?.expressionManager?._motions;
+            if(expressions && expressions.size > 0){
+                const keys = [...expressions.keys()];
+                const key = keys[Math.floor(Math.random() * keys.length)];
+                model.expression(key);
+            }
+            return;
         }
-        return;
-      }
 
-      // Body click: random TapBody motion
-      if (model.hitTest("Body", x, y)) {
-        const tapBodyMotions = model.motions?.TapBody;
-        if (tapBodyMotions && tapBodyMotions.length > 0) {
-          const motion = tapBodyMotions[Math.floor(Math.random() * tapBodyMotions.length)];
-          model.motion(
-            "TapBody",
-            motion.File,
-            { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
-          );
+        // Body click: random TapBody motion
+        if(model.hitTest("Body", x, y)){
+            const tapMotions = model.motions?.TapBody;
+            if(tapMotions && tapMotions.length > 0){
+                const motion = tapMotions[Math.floor(Math.random() * tapMotions.length)];
+                model.motion(
+                    "TapBody",
+                    motion.File,
+                    { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+                );
+            }
+            return;
         }
-      }
     });
 
     model.on("pointermove", e => {
-      const x = e.data.global.x;
-      const y = e.data.global.y;
-      if (!dragging) {
-        model.focus(x, y);
-        return;
-      }
-      dragX = (x - model.x) / (model.width * 0.5);
-      dragY = (y - model.y) / (model.height * 0.5);
-      dragX = Math.max(-1, Math.min(1, dragX));
-      dragY = Math.max(-1, Math.min(1, dragY));
+        const x = e.data.global.x;
+        const y = e.data.global.y;
+        if(!dragging){
+            model.focus(x, y);
+            return;
+        }
+        dragX = (x - model.x) / (model.width * 0.5);
+        dragY = (y - model.y) / (model.height * 0.5);
+        dragX = Math.max(-1, Math.min(1, dragX));
+        dragY = Math.max(-1, Math.min(1, dragY));
     });
 
     model.on("pointerup", stopDrag);
     model.on("pointerupoutside", stopDrag);
 
     // =================================================
-    // Ticker: subtle body/eye motion
+    // Ticker: body/eye follow
     // =================================================
     const ticker = new PIXI.Ticker();
     ticker.add(() => {
-      const dx = dragging ? dragX : 0;
-      const dy = dragging ? dragY : 0;
+        const dx = dragging ? dragX : 0;
+        const dy = dragging ? dragY : 0;
 
-      core.setParameterValueById("ParamAngleX", dx * 30);
-      core.setParameterValueById("ParamAngleY", dy * 30);
-      core.setParameterValueById("ParamAngleZ", dx * dy * -30);
-      core.setParameterValueById("ParamBodyAngleX", dx * 10);
-      core.setParameterValueById("ParamEyeBallX", dx);
-      core.setParameterValueById("ParamEyeBallY", dy);
+        core.setParameterValueById("ParamAngleX", dx * 30);
+        core.setParameterValueById("ParamAngleY", dy * 30);
+        core.setParameterValueById("ParamAngleZ", dx * dy * -30);
+        core.setParameterValueById("ParamBodyAngleX", dx * 10);
+        core.setParameterValueById("ParamEyeBallX", dx);
+        core.setParameterValueById("ParamEyeBallY", dy);
 
-      model.update(1);
-      app.renderer.render(app.stage);
+        model.update(1);
+        app.renderer.render(app.stage);
     });
     ticker.start();
 
-  } catch (e) {
+  } catch(e){
     console.error("❌ MODEL LOAD ERROR:", e);
   }
 })();
