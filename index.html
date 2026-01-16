@@ -374,37 +374,53 @@ socket.onmessage = (event) => {
   
 // ======== LOCAL SPEECH + LIVE2D FUNCTION ========
 function speakWithModel(text){
+    if(!window.model) return;
+
+    const core = window.model.internalModel.coreModel;
+
     const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1;   
-    utter.pitch = 1.1; 
-    speechSynthesis.speak(utter); 
+    utter.rate = 1;
+    utter.pitch = 1.1;
 
-    if(window.model){
-        const core = window.model.internalModel.coreModel;
+    // Random motion while speaking
+    playRandomMotion();
 
-        // Open mouth while speaking
-        core.setParameterValueById("ParamMouthOpenY", 1); 
-        setTimeout(()=>{
-            core.setParameterValueById("ParamMouthOpenY", 0);
-        }, 300);
+    // Track mouth movement
+    let mouthInterval;
 
-        // --- NEW: Play a random motion from the model ---
-        if(window.model.motions){
-            const motionCategories = Object.keys(window.model.motions);
-            if(motionCategories.length > 0){
-                // Pick a random category
-                const cat = motionCategories[Math.floor(Math.random() * motionCategories.length)];
-                const motions = window.model.motions[cat];
-                if(motions.length > 0){
-                    const motion = motions[Math.floor(Math.random() * motions.length)];
-                    window.model.motion(
-                        cat,
-                        motion.File,
-                        { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
-                    );
-                }
-            }
-        }
+    utter.onstart = () => {
+        // Start mouth animation
+        mouthInterval = setInterval(()=>{
+            // ParamMouthOpenY: random small variations
+            const open = Math.random() * 0.5 + 0.5; // 0.5 to 1
+            core.setParameterValueById("ParamMouthOpenY", open);
+        }, 100); // every 100ms
+    };
+
+    utter.onend = () => {
+        // Stop mouth animation
+        clearInterval(mouthInterval);
+        core.setParameterValueById("ParamMouthOpenY", 0);
+    };
+
+    speechSynthesis.speak(utter);
+
+    // --- helper: play random motion ---
+    function playRandomMotion(){
+        if(!window.model.motions) return;
+        const motionCategories = Object.keys(window.model.motions);
+        if(motionCategories.length === 0) return;
+
+        const cat = motionCategories[Math.floor(Math.random() * motionCategories.length)];
+        const motions = window.model.motions[cat];
+        if(motions.length === 0) return;
+
+        const motion = motions[Math.floor(Math.random() * motions.length)];
+        window.model.motion(
+            cat,
+            motion.File,
+            { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+        );
     }
 }
   
@@ -590,6 +606,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
