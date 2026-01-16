@@ -287,6 +287,16 @@ canvas {
     <button id="login-staff">Login</button>
     <div class="login-error" id="staff-error"></div>
   </div>
+
+  <div id="scan-status" style="
+    margin-top: 20px;
+    font-size: 16px;
+    color: #fff;
+    text-align: center;
+    display: none;
+">
+    Scanning for face...
+  </div>
 </div>
 
 <!-- TTS -->
@@ -369,8 +379,35 @@ socket.onmessage = (event) => {
         case "error":
             console.error("Backend error:", data.message);
             break;
+
+        case "face_result":
+          // Hide scanning bar once face is detected
+        scanStatus.classList.remove("active");
+        scanStatus.style.display = "none";
+        // Update patient info dynamically
+        userText.textContent = data.name;
+        medText.textContent = `${data.prescription || ""} – 1 dose`;
+        dispenser.style.display = "flex";
+        tts.style.display = "flex"; // show TTS panel
+        break;
     }
 };
+
+// ======== LOGIN SCANNING ========
+const scanStatus = document.getElementById("scan-status");
+
+socket.addEventListener("open", () => {
+    console.log("WebSocket connected, starting face recognition scan...");
+
+    // Show scanning bar
+    scanStatus.classList.add("active");
+    scanStatus.textContent = "Scanning for face...";
+
+    // Tell backend to start scanning
+    socket.send(JSON.stringify({
+        type: "start_face_scan"
+    }));
+});
   
 // ======== LOCAL SPEECH + LIVE2D FUNCTION ========
 function speakWithModel(text){
@@ -609,6 +646,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
