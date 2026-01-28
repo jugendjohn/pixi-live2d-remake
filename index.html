@@ -355,43 +355,46 @@ socket.onopen = () => console.log("Connected to backend");
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
 
-    switch(data.type){
-        case "face_result":
-            // Update patient info dynamically
-            userText.textContent = data.name;
-            medText.textContent = `${data.prescription || ""} – 1 dose`;
+    switch (data.type) {
+
+        case "name":
+            // Hide scanning indicator
+            scanStatus.classList.remove("active");
+            scanStatus.style.display = "none";
+
+            // Update patient name UI
+            userText.textContent = data.name || "";
             dispenser.style.display = "flex";
+            tts.style.display = "flex";
+            break;
+
+        case "medicine":
+            // Update patient prescription UI
+            medText.textContent = `${data.medicine || ""} – 1 dose`;
             break;
 
         case "tts_status":
-            document.getElementById("tts-output").textContent = data.status; // update the TTS output panel
-            speakWithModel(data.status); // call local speech synthesis + animation
+            // Display + speak AI output
+            const output = document.getElementById("tts-output");
+            output.textContent = data.text || "";
+            speakWithModel(data.text, data.emotion);
             break;
 
         case "dispense_status":
-            medText.textContent = data.message;
-            bottle.src = "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
+            medText.textContent = data.message || "";
+            bottle.src =
+              "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
+
             const btn = document.getElementById("dispense-btn");
             btn.textContent = "Dispense";
             btn.disabled = false;
             break;
 
-        case "error":
-            console.error("Backend error:", data.message);
-            break;
-
-        case "face_result":
-          // Hide scanning bar once face is detected
-        scanStatus.classList.remove("active");
-        scanStatus.style.display = "none";
-        // Update patient info dynamically
-        userText.textContent = data.name;
-        medText.textContent = `${data.prescription || ""} – 1 dose`;
-        dispenser.style.display = "flex";
-        tts.style.display = "flex"; // show TTS panel
-        break;
+        default:
+            console.warn("Unknown WS message:", data);
     }
 };
+
 
 // ======== LOGIN SCANNING ========
 const scanStatus = document.getElementById("scan-status");
@@ -508,11 +511,15 @@ document.getElementById("verify-patient").onclick = () => {
   overlay.style.display="none";
   tts.style.display="flex";
 
-  // Trigger backend face recognition or patient fetch
+  // WebSocket Login
   socket.send(JSON.stringify({
-    type: "patient_verified",
-    id: p.id,
+    type: "name",
     name: p.name
+  }));
+
+  socket.send(JSON.stringify({
+    type: "prescription",
+    prescription: p.prescriptions[0]?.medicine || ""
   }));
 
   userText.textContent = p.name;
@@ -627,25 +634,30 @@ document.getElementById("dispense-btn").onclick = () => {
     btn.disabled = false;
   }, 3000);
 
-  // Send WebSocket command to backend
+  // WebSocket Dispenser
   socket.send(JSON.stringify({
     type: "dispense_meds",
-    patient: userText.textContent
+    name: userText.textContent,             // patient name
+    prescription: medText.textContent.split(" – ")[0]  // extract the medicine name only
   }));
 };
 
 // ======== TTS LOGIC ========
 document.getElementById("tts-button").onclick = () => {
   const text = document.getElementById("tts-input").value;
+
+  // WebSocket TTS
   socket.send(JSON.stringify({
     type: "speak_text",
-    text
-  }));
+    text: document.getElementById("tts-input").value,  // the text to speak
+    emotion: "selected_emotion"                                 // dynamic emotion
+    }));
 };
 </script>
 
 </body>
 </html>
+
 
 
 
