@@ -152,13 +152,6 @@ canvas {
   display: none;
   z-index: 20;
 }
-
-.login-form {
-  background: rgba(0,0,0,0.85);
-  padding: 16px;
-  border-radius: 12px;
-}
-
 </style>
 </head>
 
@@ -203,6 +196,8 @@ const userText = document.getElementById("dispenser-username");
 const medText = document.getElementById("dispenser-medicine");
 const bottle = document.getElementById("dispenser-bottle");
 const ttsOutput = document.getElementById("tts-output");
+const dispenser = document.getElementById("dispenser-panel");
+const tts = document.getElementById("tts-panel");
 
 /* INIT BLANK */
 userText.textContent = "";
@@ -213,45 +208,33 @@ bottle.src = "Samples/Resources/bottle_empty.png";
 const socket = new WebSocket("ws://127.0.0.1:8000/ws");
 
 socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
+  const data = JSON.parse(event.data);
 
-    switch (data.type) {
+  switch (data.type) {
 
-        case "name":
-            // Patient identified
-            userText.textContent = data.name || "";
-            dispenser.style.display = "flex";
-            tts.style.display = "flex";
-            break;
+    case "name":
+      userText.textContent = data.name || "";
+      break;
 
-        case "medicine":
-            // Prescription update
-            medText.textContent = `${data.medicine || ""} – 1 dose`;
-            bottle.src = "Samples/Resources/bottle_empty.png";
-            break;
+    case "medicine":
+      medText.textContent = `${data.medicine || ""} – 1 dose`;
+      bottle.src = "Samples/Resources/bottle_empty.png";
+      break;
 
-        case "tts_status":
-            // AI speaks
-            const output = document.getElementById("tts-output");
-            output.textContent = data.text || "";
-            speakWithModel(data.text);
-            break;
+    case "tts_status":
+      ttsOutput.textContent = data.text || "";
+      speakWithModel(data.text);
+      break;
 
-        case "dispense_status":
-            medText.textContent = data.message || "";
-            bottle.src =
-              "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
+    case "dispense_status":
+      medText.textContent = data.message || "";
+      bottle.src =
+        "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
+      break;
 
-            const btn = document.getElementById("dispense-btn");
-            if (btn) {
-              btn.textContent = "Dispense";
-              btn.disabled = false;
-            }
-            break;
-
-        default:
-            console.warn("Unknown WS message:", data);
-    }
+    default:
+      console.warn("Unknown WS message:", data);
+  }
 };
 
 /* STAFF LOGIN */
@@ -261,7 +244,7 @@ const patientTab = document.getElementById("patient-tab");
 
 staffBtn.onclick = () => {
   const pwd = prompt("Enter staff password:");
-  if(pwd === "password"){
+  if (pwd === "password") {
     staffPanel.style.display = "flex";
     patientTab.style.display = "block";
     staffBtn.style.display = "none";
@@ -278,21 +261,7 @@ document.getElementById("tts-button").onclick = () => {
     text
   }));
 };
-
-/*Hide buttons on click*/
-function showForm(type){
-  // hide role buttons (Patient / Visitor / Staff)
-  document.querySelector("#login-overlay > div").style.display = "none";
-
-  document.getElementById("patient-form").style.display =
-    type === "patient" ? "flex" : "none";
-
-  document.getElementById("staff-form").style.display =
-    type === "staff" ? "flex" : "none";
-};
-  
 </script>
 
 </body>
 </html>
-
