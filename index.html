@@ -152,6 +152,13 @@ canvas {
   display: none;
   z-index: 20;
 }
+
+.login-form {
+  background: rgba(0,0,0,0.85);
+  padding: 16px;
+  border-radius: 12px;
+}
+
 </style>
 </head>
 
@@ -200,6 +207,7 @@ const ttsOutput = document.getElementById("tts-output");
 /* INIT BLANK */
 userText.textContent = "";
 medText.textContent = "";
+bottle.src = "Samples/Resources/bottle_empty.png";
 
 /* WEBSOCKET */
 const socket = new WebSocket("ws://127.0.0.1:8000/ws");
@@ -270,7 +278,21 @@ document.getElementById("tts-button").onclick = () => {
     text
   }));
 };
+
+/*Hide buttons on click*/
+function showForm(type){
+  // hide role buttons (Patient / Visitor / Staff)
+  document.querySelector("#login-overlay > div").style.display = "none";
+
+  document.getElementById("patient-form").style.display =
+    type === "patient" ? "flex" : "none";
+
+  document.getElementById("staff-form").style.display =
+    type === "staff" ? "flex" : "none";
+};
+  
 </script>
 
 </body>
 </html>
+
