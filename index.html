@@ -15,7 +15,7 @@ html, body {
   font-family: "Segoe UI", Roboto, sans-serif;
 }
 
-/* 🔑 CRITICAL FIX: allow clicks to pass through canvas */
+/* Allow clicks through canvas */
 canvas {
   position: fixed;
   inset: 0;
@@ -24,9 +24,7 @@ canvas {
   pointer-events: none;
 }
 
-/* ===============================
-   TTS PANEL
-=============================== */
+/* TTS PANEL */
 #tts-panel {
   position: absolute;
   top: 50%;
@@ -37,7 +35,7 @@ canvas {
   border-radius: 20px;
   box-shadow: 0 25px 50px rgba(0,0,0,0.15);
   padding: 24px;
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 16px;
   z-index: 10;
@@ -47,28 +45,6 @@ canvas {
   font-size: 20px;
   font-weight: 700;
   text-align: center;
-  border-bottom: 1px solid #e6e6e6;
-  padding-bottom: 8px;
-}
-
-#tts-input {
-  min-height: 120px;
-  resize: none;
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  padding: 10px;
-}
-
-#tts-button {
-  height: 48px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg,#6b8cff,#4f6cff);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 #tts-output {
@@ -79,26 +55,54 @@ canvas {
   border: 1px solid #e0e0e0;
 }
 
-/* ===============================
-   PATIENT TAB
-=============================== */
-#patient-tab {
+/* DISPENSER */
+#dispenser-panel {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: #4f6cff;
-  color: #fff;
-  padding: 12px 18px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: none;
-  z-index: 20;
+  top: 50%;
+  right: 35px;
+  transform: translateY(-50%);
+  width: 220px;
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  z-index: 10;
 }
 
-/* ===============================
-   STAFF TTS PANEL
-=============================== */
+#dispenser-username {
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+#dispenser-bottle {
+  width: 90px;
+  margin: 10px 0;
+}
+
+#dispenser-medicine {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* STAFF LOGIN BUTTON */
+#staff-login-btn {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  background: #4f6cff;
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  z-index: 50;
+}
+
+/* STAFF TTS PANEL */
 #staff-tts-panel {
   position: absolute;
   bottom: 30px;
@@ -133,209 +137,50 @@ canvas {
   font-weight: 600;
   cursor: pointer;
 }
-  
-/* ===============================
-   DISPENSER PANEL
-=============================== */
-#dispenser-panel {
+
+/* PATIENT TAB */
+#patient-tab {
   position: absolute;
-  top: 50%;
-  right: 35px;
-  transform: translateY(-50%);
-  width: 220px;
-  background: #fff;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-  padding: 16px;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  z-index: 10;
-}
-
-#dispenser-username {
-  font-weight: 700;
-  margin-bottom: 10px;
-}
-
-#dispenser-bottle {
-  width: 90px;
-  margin: 10px 0;
-}
-
-#dispenser-medicine {
-  font-size: 14px;
+  top: 20px;
+  right: 120px;
+  background: #4f6cff;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 12px;
   font-weight: 600;
-}
-
-/* ===============================
-   LOGIN OVERLAY
-=============================== */
-#login-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.7);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 20px;
-  z-index: 100;
-  color: white;
-}
-
-#login-overlay button {
-  padding: 12px 24px;
-  font-size: 18px;
   cursor: pointer;
-}
-
-.login-form {
   display: none;
-  flex-direction: column;
-  gap: 8px;
-  width: 260px;
-}
-
-.login-form input {
-  padding: 8px;
-  border-radius: 8px;
-  border: none;
-}
-
-.login-error {
-  color: #ff5a5a;
-  font-size: 14px;
-}
-
-/* ===============================
-   PATIENT MODAL
-=============================== */
-#patient-modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  z-index: 50;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal {
-  background: #fff;
-  width: 520px;
-  border-radius: 16px;
-  padding: 20px;
-}
-
-.modal-header {
-  font-weight: 700;
-  display: flex;
-  justify-content: space-between;
-}
-
-.close-btn {
-  cursor: pointer;
-}
-
-.patient-card input {
-  width: 100%;
-  margin-bottom: 4px;
-  padding: 4px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-
-.prescription-row input {
-  padding: 4px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
-.remove-btn {
-  background:#ff5a5a;
-  color:#fff;
-  border:none;
-  border-radius:4px;
-  cursor:pointer;
-  padding:0 6px;
+  z-index: 20;
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div id="login-overlay">
-  <h1>Welcome</h1>
-  <div style="display:flex;gap:16px">
-    <button id="btn-patient">Patient</button>
-    <button id="btn-visitor">Visitor</button>
-    <button id="btn-staff">Staff</button>
-  </div>
+<!-- STAFF LOGIN -->
+<div id="staff-login-btn">Staff Login</div>
 
-  <div class="login-form" id="patient-form">
-    <input id="patient-id" placeholder="Patient ID">
-    <input id="patient-name" placeholder="Patient Name">
-    <button id="verify-patient">Verify</button>
-    <div class="login-error" id="patient-error"></div>
-  </div>
-
-  <div class="login-form" id="staff-form">
-    <input id="staff-account" placeholder="Account">
-    <input id="staff-password" type="password" placeholder="Password">
-    <button id="login-staff">Login</button>
-    <div class="login-error" id="staff-error"></div>
-  </div>
-
-  <div id="scan-status" style="
-    margin-top: 20px;
-    font-size: 16px;
-    color: #fff;
-    text-align: center;
-    display: none;
-">
-    Scanning for face...
-  </div>
-</div>
-
-<!-- TTS -->
+<!-- TTS DISPLAY -->
 <div id="tts-panel">
   <div class="tts-header">Virtual Companion</div>
-  <!--  <textarea id="tts-input"></textarea>
-  <button id="tts-button">Speak</button>  -->
   <div id="tts-output"></div>
 </div>
 
-<!-- STAFF TTS PANEL -->
+<!-- STAFF TTS -->
 <div id="staff-tts-panel">
   <div class="tts-header">Staff TTS Control</div>
-  <textarea id="tts-input" placeholder="Enter text to speak">
-  </textarea>
+  <textarea id="tts-input" placeholder="Enter text to speak"></textarea>
   <button id="tts-button">Speak</button>
 </div>
-  
+
 <!-- DISPENSER -->
 <div id="dispenser-panel">
   <div id="dispenser-username"></div>
   <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png">
   <div id="dispenser-medicine"></div>
-  <button id="dispense-btn" style="margin-top:10px;padding:8px 16px;border-radius:8px;border:none;background:#4f6cff;color:#fff;cursor:pointer;">Dispense</button>
 </div>
 
 <div id="patient-tab">Patients</div>
-
-<!-- PATIENT MODAL -->
-<div id="patient-modal">
-  <div class="modal">
-    <div class="modal-header">
-      Patient List
-      <span class="close-btn" id="close-modal">✕</span>
-    </div>
-    <div id="patient-list"></div>
-    <button id="add-patient" style="margin-top:10px;padding:8px 12px;border-radius:8px;border:none;background:#6b8cff;color:#fff;cursor:pointer;">Add Patient</button>
-  </div>
-</div>
 
 <!-- PIXI / LIVE2D -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
@@ -345,12 +190,19 @@ canvas {
 <script src="Main/script.js"></script>
 <script src="Main/Model.js"></script>
 
-<!-- UI LOGIC -->
 <script>
-// ======== WEB SOCKET SETUP ========
-const socket = new WebSocket("ws://127.0.0.1:8000/ws"); // adjust IP if needed, local address
+/* ELEMENTS */
+const userText = document.getElementById("dispenser-username");
+const medText = document.getElementById("dispenser-medicine");
+const bottle = document.getElementById("dispenser-bottle");
+const ttsOutput = document.getElementById("tts-output");
 
-socket.onopen = () => console.log("Connected to backend");
+/* INIT BLANK */
+userText.textContent = "";
+medText.textContent = "";
+
+/* WEBSOCKET */
+const socket = new WebSocket("ws://127.0.0.1:8000/ws");
 
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
@@ -358,26 +210,23 @@ socket.onmessage = (event) => {
     switch (data.type) {
 
         case "name":
-            // Hide scanning indicator
-            scanStatus.classList.remove("active");
-            scanStatus.style.display = "none";
-
-            // Update patient name UI
+            // Patient identified
             userText.textContent = data.name || "";
             dispenser.style.display = "flex";
             tts.style.display = "flex";
             break;
 
         case "medicine":
-            // Update patient prescription UI
+            // Prescription update
             medText.textContent = `${data.medicine || ""} – 1 dose`;
+            bottle.src = "Samples/Resources/bottle_empty.png";
             break;
 
         case "tts_status":
-            // Display + speak AI output
+            // AI speaks
             const output = document.getElementById("tts-output");
             output.textContent = data.text || "";
-            speakWithModel(data.text, data.emotion);
+            speakWithModel(data.text);
             break;
 
         case "dispense_status":
@@ -386,8 +235,10 @@ socket.onmessage = (event) => {
               "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
 
             const btn = document.getElementById("dispense-btn");
-            btn.textContent = "Dispense";
-            btn.disabled = false;
+            if (btn) {
+              btn.textContent = "Dispense";
+              btn.disabled = false;
+            }
             break;
 
         default:
@@ -395,276 +246,31 @@ socket.onmessage = (event) => {
     }
 };
 
-
-// ======== LOGIN SCANNING ========
-const scanStatus = document.getElementById("scan-status");
-
-socket.addEventListener("open", () => {
-    console.log("WebSocket connected, starting face recognition scan...");
-
-    // Show scanning bar
-    scanStatus.classList.add("active");
-    scanStatus.textContent = "Scanning for face...";
-
-    // Tell backend to start scanning
-    socket.send(JSON.stringify({
-        type: "start_face_scan"
-    }));
-});
-  
-// ======== LOCAL SPEECH + LIVE2D FUNCTION ========
-function speakWithModel(text){
-    if(!window.model) return;
-    const model = window.model;
-    const core = model.internalModel.coreModel;
-
-    // --- Play a random motion ---
-    if(model.motions){
-        const categories = Object.keys(model.motions);
-        if(categories.length > 0){
-            const cat = categories[Math.floor(Math.random() * categories.length)];
-            const motions = model.motions[cat];
-            if(motions.length > 0){
-                const motion = motions[Math.floor(Math.random() * motions.length)];
-                model.motion(
-                    cat,
-                    motion.File,
-                    { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
-                );
-            }
-        }
-    }
-
-    // --- Mouth animation ---
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1;
-    utter.pitch = 1.1;
-
-    const words = text.split(/\s+/).length;
-    const duration = words * 0.35 * 1000; // approximate duration
-
-    let startTime = Date.now();
-    let angle = 0;
-
-    const mouthInterval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        if(elapsed > duration){
-            clearInterval(mouthInterval);
-            core.setParameterValueById("ParamMouthOpenY", 0);
-            return;
-        }
-        // --- full jaw range 0 → 1.0 ---
-        const open = Math.abs(Math.sin(angle)); // range 0 → 1
-        core.setParameterValueById("ParamMouthOpenY", open);
-        angle += 0.7; // faster oscillation
-    }, 25); // update every 25ms for smoother animation
-
-    utter.onend = () => {
-        clearInterval(mouthInterval);
-        core.setParameterValueById("ParamMouthOpenY", 0);
-    };
-
-    speechSynthesis.speak(utter);
-}
-
-// ======== DATA & ELEMENTS ========
-const patients = [
-  { id:"001", name:"Amir", prescriptions:[{ medicine:"Paracetamol 500mg", datetime: "2025-10-22T09:30" }] },
-  { id:"002", name:"John", prescriptions:[{ medicine:"Amlodipine 5mg", datetime: "2025-10-22T08:45" }] }
-];
-
-const overlay = document.getElementById("login-overlay");
-const tts = document.getElementById("tts-panel");
-const dispenser = document.getElementById("dispenser-panel");
+/* STAFF LOGIN */
+const staffBtn = document.getElementById("staff-login-btn");
+const staffPanel = document.getElementById("staff-tts-panel");
 const patientTab = document.getElementById("patient-tab");
-const patientModal = document.getElementById("patient-modal");
-const patientList = document.getElementById("patient-list");
 
-const bottle = document.getElementById("dispenser-bottle");
-const medText = document.getElementById("dispenser-medicine");
-const userText = document.getElementById("dispenser-username");
-
-// ======== LOGIN / FORM LOGIC ========
-document.getElementById("btn-patient").onclick = () => showForm("patient");
-document.getElementById("btn-staff").onclick = () => showForm("staff");
-document.getElementById("btn-visitor").onclick = () => {
-    overlay.style.display = "none";
-    tts.style.display = "flex";
-};
-
-function showForm(type){
-  document.getElementById("patient-form").style.display = type==="patient"?"flex":"none";
-  document.getElementById("staff-form").style.display = type==="staff"?"flex":"none";
-}
-
-// ======== PATIENT VERIFICATION ========
-document.getElementById("verify-patient").onclick = () => {
-  const id = document.getElementById("patient-id").value.trim();
-  const name = document.getElementById("patient-name").value.trim().toLowerCase();
-  const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
-
-  if(!p){
-    document.getElementById("patient-error").textContent = "Invalid details";
-    return;
-  }
-
-  overlay.style.display="none";
-  tts.style.display="flex";
-
-  // WebSocket Login
-  socket.send(JSON.stringify({
-    type: "name",
-    name: p.name
-  }));
-
-  socket.send(JSON.stringify({
-    type: "prescription",
-    prescription: p.prescriptions[0]?.medicine || ""
-  }));
-
-  userText.textContent = p.name;
-  dispenser.style.display = "flex";
-  bottle.src = "Samples/Resources/bottle_empty.png";
-  medText.textContent = `${p.prescriptions[0].medicine} – 1 dose`;
-};
-
-// ======== STAFF LOGIN ========
-document.getElementById("login-staff").onclick = () => {
-  if(
-    document.getElementById("staff-account").value === "admin" &&
-    document.getElementById("staff-password").value === "password"
-  ){
-    overlay.style.display="none";
-    tts.style.display="flex";
-    dispenser.style.display="flex";
-    patientTab.style.display="block";
-    userText.textContent="admin";
-    bottle.style.display="none";
-    medText.style.display="none";
-    document.getElementById("staff-tts-panel").style.display = "flex";
+staffBtn.onclick = () => {
+  const pwd = prompt("Enter staff password:");
+  if(pwd === "password"){
+    staffPanel.style.display = "flex";
+    patientTab.style.display = "block";
+    staffBtn.style.display = "none";
   } else {
-    document.getElementById("staff-error").textContent="Invalid login";
+    alert("Invalid password");
   }
 };
 
-// ======== PATIENT PANEL LOGIC ========
-function renderPatients(){
-  patientList.innerHTML = "";
-
-  patients.forEach((p,i)=>{
-    const card = document.createElement("div");
-    card.style.background = "#fff";
-    card.style.border = "1px solid #ddd";
-    card.style.borderRadius = "14px";
-    card.style.padding = "12px";
-    card.style.marginBottom = "12px";
-
-    card.innerHTML = `
-      <div style="font-weight:700;margin-bottom:6px;">P${p.id}</div>
-
-      <input
-        value="${p.name}"
-        oninput="patients[${i}].name=this.value"
-        style="width:100%;padding:8px;border-radius:10px;border:1px solid #ccc;margin-bottom:10px;"
-      >
-
-      ${p.prescriptions.map((rx,j)=>{
-        const [date,time] = rx.datetime.split("T");
-        return `
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-            <input
-              value="${rx.medicine}"
-              oninput="patients[${i}].prescriptions[${j}].medicine=this.value"
-              style="flex:2;padding:8px;border-radius:10px;border:1px solid #ccc;"
-            >
-
-            <input
-              type="date"
-              value="${date}"
-              onchange="patients[${i}].prescriptions[${j}].datetime=this.value+'T'+patients[${i}].prescriptions[${j}].datetime.split('T')[1]"
-              style="padding:8px;border-radius:10px;border:1px solid #ccc;"
-            >
-
-            <input
-              type="time"
-              value="${time}"
-              onchange="patients[${i}].prescriptions[${j}].datetime=patients[${i}].prescriptions[${j}].datetime.split('T')[0]+'T'+this.value"
-              style="padding:8px;border-radius:10px;border:1px solid #ccc;"
-            >
-
-            <button
-              onclick="patients.splice(${i},1);renderPatients()"
-              style="background:#ff5a5a;color:#fff;border:none;border-radius:10px;width:36px;height:36px;cursor:pointer;"
-            >✕</button>
-          </div>
-        `;
-      }).join("")}
-    `;
-
-    patientList.appendChild(card);
-  });
-}
-
-document.getElementById("add-patient").onclick = () => {
-  const newId = "P"+String(patients.length+1).padStart(3,"0");
-  patients.push({ id:newId, name:"New Patient", prescriptions:[{medicine:"", datetime:new Date().toISOString().slice(0,16)}] });
-  renderPatients();
-};
-
-patientTab.onclick = () => {
-  renderPatients();
-  patientModal.style.display="flex";
-};
-
-document.getElementById("close-modal").onclick = () => {
-  patientModal.style.display="none";
-};
-
-// ======== DISPENSER LOGIC ========
-document.getElementById("dispense-btn").onclick = () => {
-  const btn = document.getElementById("dispense-btn");
-  btn.textContent = "Dispensing...";
-  btn.disabled = true;
-
-  // Start simulated dispensing animation
-  setTimeout(()=>{
-    bottle.src = "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
-    medText.textContent = "Dispensed!";
-    btn.textContent = "Dispense";
-    btn.disabled = false;
-  }, 3000);
-
-  // WebSocket Dispenser
-  socket.send(JSON.stringify({
-    type: "dispense_meds",
-    name: userText.textContent,             // patient name
-    prescription: medText.textContent.split(" – ")[0]  // extract the medicine name only
-  }));
-};
-
-// ======== TTS LOGIC ========
+/* STAFF MANUAL TTS */
 document.getElementById("tts-button").onclick = () => {
   const text = document.getElementById("tts-input").value;
-
-  // WebSocket TTS
   socket.send(JSON.stringify({
     type: "speak_text",
-    text: document.getElementById("tts-input").value,  // the text to speak
-    emotion: "selected_emotion"                                 // dynamic emotion
-    }));
+    text
+  }));
 };
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
