@@ -210,33 +210,36 @@ const socket = new WebSocket("ws://127.0.0.1:8000/ws");
 socket.onmessage = (event) => {
   const data = JSON.parse(event.data);
 
-  // Patient name
-  if (data.name) {
-    userText.textContent = data.name;
-    dispenser.style.display = "flex";
-    tts.style.display = "flex";
-  }
+  switch (data.type) {
 
-  // Medicine info
-  if (data.medicine) {
-    medText.textContent = `${data.medicine} – 1 dose`;
-    bottle.src = "Samples/Resources/bottle_empty.png";
-  }
+    case "name":
+      userText.textContent = data.name || "";
+      dispenser.style.display = "flex";
+      tts.style.display = "flex";
+      break;
 
-  // AI / TTS text
-  if (data.tts_status) {
-    ttsOutput.textContent = data.tts_status;
-    speakWithModel(data.tts_status);
-  }
+    case "medicine":
+      medText.textContent = `${data.medicine || ""} – 1 dose`;
+      bottle.src = "Samples/Resources/bottle_empty.png";
+      break;
 
-  // Dispense state
-  if (data.dispense_status) {
-    if (data.dispense_status === "done") {
-      bottle.src =
-        "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
-    }
+    case "tts_status":
+      ttsOutput.textContent = data.text || "";
+      speakWithModel(data.text);
+      break;
+
+    case "dispense_status":
+      if (data.message === "done") {
+        bottle.src =
+          "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
+      }
+      break;
+
+    default:
+      console.warn("Unknown WS message:", data);
   }
 };
+
 
 
 /* STAFF LOGIN */
@@ -267,4 +270,5 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
