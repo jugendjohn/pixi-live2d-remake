@@ -218,7 +218,17 @@ userText.textContent = "";
 medText.textContent = "";
 
 /* WEBSOCKET */
-const socket = new WebSocket("ws://127.0.0.1:8000/ws");
+let socket = null;
+
+try {
+  if (location.protocol === "https:") {
+    console.warn("WS disabled on HTTPS (use local HTTP or WSS)");
+  } else {
+    socket = new WebSocket("ws://127.0.0.1:8000/ws");
+  }
+} catch (e) {
+  console.error("WebSocket init failed:", e);
+}
 
 socket.onmessage = (event) => {
   const data = JSON.parse(event.data);
@@ -323,6 +333,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
