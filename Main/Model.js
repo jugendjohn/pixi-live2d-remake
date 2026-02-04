@@ -17,7 +17,7 @@
   app.view.style.left = "0";
   app.view.style.width = "100vw";
   app.view.style.height = "100vh";
-  app.view.style.pointerEvents = "auto"; 
+  app.view.style.pointerEvents = "none"; 
   document.body.appendChild(app.view);
 
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
