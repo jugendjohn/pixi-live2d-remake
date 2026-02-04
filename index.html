@@ -151,6 +151,19 @@ canvas {
   display: none;
   z-index: 20;
 }
+
+/* Disable pointer events for PIXI container as well */
+.pixi-container,
+.pixi-container * {
+  pointer-events: none !important;
+}
+
+body > canvas,
+body > div[style*="position: fixed"] {
+  pointer-events: none;
+}
+
+  
 </style>
 </head>
 
@@ -306,3 +319,4 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
