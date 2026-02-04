@@ -230,40 +230,32 @@ try {
   console.error("WebSocket init failed:", e);
 }
 
-socket.onmessage = (event) => {
-  const data = JSON.parse(event.data);
+if (socket) {
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
 
-  switch (data.type) {
+    switch (data.type) {
 
-    case "name":
-      userText.textContent = data.name || "";
-      dispenser.style.display = "flex";
-      tts.style.display = "flex";
-      break;
+      case "name":
+        userText.textContent = data.name || "";
+        dispenser.style.display = "flex";
+        tts.style.display = "flex";
+        break;
 
-    case "medicine":
-      medText.textContent = `${data.medicine || ""} – 1 dose`;
-      break;
+      case "medicine":
+        medText.textContent = `${data.medicine || ""} – 1 dose`;
+        break;
 
-    case "tts_status":
-      ttsOutput.textContent = data.text || "";
-  // Trigger expression + gesture + lip sync
-      speakWithModel(data.text, data.emotion || "neutral");
-      break;
-      
-/*
-    case "dispense_status":
-      if (data.message === "done") {
-        bottle.src =
-          "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
-      }
-      break;
-*/
+      case "tts_status":
+        ttsOutput.textContent = data.text || "";
+        speakWithModel(data.text, data.emotion || "neutral");
+        break;
 
-    default:
-      console.warn("Unknown WS message:", data);
-  }
-};
+      default:
+        console.warn("Unknown WS message:", data);
+    }
+  };
+}
 
 function speakWithModel(text, emotion = "neutral") {
   if (!window.model || !window.live2dCore) return;
@@ -333,6 +325,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
