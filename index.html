@@ -225,7 +225,8 @@ socket.onmessage = (event) => {
 
     case "tts_status":
       ttsOutput.textContent = data.text || "";
-      speakWithModel(data.text);
+  // Trigger expression + gesture + lip sync
+      speakWithModel(data.text, data.emotion || "neutral");
       break;
 
     case "dispense_status":
@@ -240,6 +241,44 @@ socket.onmessage = (event) => {
   }
 };
 
+function speakWithModel(text, emotion = "neutral") {
+  if (!window.model || !window.live2dCore) return;
+
+  // 1️⃣ Expression mapping
+  const expressionMap = {
+    happy: "Smile",
+    sad: "Frown",
+    angry: "Angry",
+    surprise: "Surprised",
+    neutral: null
+  };
+
+  const expr = expressionMap[emotion];
+  if (expr) {
+    try {
+      window.model.expression(expr);
+    } catch (e) {
+      console.warn("Expression not found:", expr);
+    }
+  }
+
+  // 2️⃣ Body motion (TapBody works universally)
+  try {
+    const motions = window.model.motions?.TapBody;
+    if (motions && motions.length > 0) {
+      const m = motions[Math.floor(Math.random() * motions.length)];
+      window.model.motion("TapBody", m.File);
+    }
+  } catch (e) {
+    console.warn("Motion failed");
+  }
+
+  // 3️⃣ Browser TTS (keeps lip sync logic intact)
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 1;
+  utter.pitch = 1.05;
+  speechSynthesis.speak(utter);
+}
 
 
 /* STAFF LOGIN */
@@ -270,5 +309,6 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
