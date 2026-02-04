@@ -340,8 +340,8 @@ function speakWithModel(text, emotion = "neutral") {
   speechSynthesis.speak(utter);
 }
 
-
 /* STAFF LOGIN */
+// Elements
 const staffBtn = document.getElementById("staff-login-btn");
 const staffForm = document.getElementById("staff-login-form");
 const loginBtn = document.getElementById("login-staff");
@@ -350,10 +350,10 @@ const staffError = document.getElementById("staff-error");
 const ttsPanel = document.getElementById("tts-panel");
 const dispenserPanel = document.getElementById("dispenser-panel");
 const patientTab = document.getElementById("patient-tab");
-const userText = document.getElementById("dispenser-username");
-const medText = document.getElementById("dispenser-medicine");
+const dispenserUser = document.getElementById("dispenser-username");
+const dispenserMed = document.getElementById("dispenser-medicine");
 
-// Show login form when top-right button clicked
+// Show login overlay when top-right button clicked
 staffBtn.addEventListener("click", () => {
   staffForm.style.display = "flex";
 });
@@ -364,44 +364,24 @@ loginBtn.addEventListener("click", () => {
   const password = document.getElementById("staff-password").value.trim();
 
   if(account === "admin" && password === "password"){
+    // Hide login UI
     staffForm.style.display = "none";
     staffBtn.style.display = "none";
 
+    // Show panels for staff
     ttsPanel.style.display = "flex";
     dispenserPanel.style.display = "flex";
     patientTab.style.display = "block";
 
-    userText.textContent = account;
-    medText.style.display = "none";
+    // Set dispenser text
+    dispenserUser.textContent = account;
+    dispenserMed.style.display = "none";
+
     staffError.textContent = "";
   } else {
     staffError.textContent = "Invalid login";
   }
 });
-// Handle login button click
-loginBtn.onclick = () => {
-  const account = document.getElementById("staff-account").value.trim();
-  const password = document.getElementById("staff-password").value.trim();
-
-  if(account === "admin" && password === "password"){
-    // Hide login UI
-    staffForm.style.display = "none";
-    staffBtn.style.display = "none";
-
-    // Show TTS panel, dispenser panel, and patient tab
-    ttsPanel.style.display = "flex";
-    dispenserPanel.style.display = "flex";
-    patientTab.style.display = "block";
-
-    // Set dispenser user text for staff
-    userText.textContent = account;
-    medText.style.display = "none";
-
-    staffError.textContent = "";
-  } else {
-    staffError.textContent = "Invalid login";
-  }
-};
 
 /* STAFF MANUAL TTS */
 document.getElementById("tts-button").onclick = () => {
@@ -415,7 +395,3 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
-
-
-
-
