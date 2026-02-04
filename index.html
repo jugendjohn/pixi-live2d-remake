@@ -215,43 +215,36 @@ if(socket){
   };
 }
 
+// Ensure DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   const staffTTSPanel = document.getElementById("staff-tts-panel");
   const openStaffBtn = document.getElementById("open-staff-tts");
   const speakBtn = document.getElementById("tts-button");
   const ttsInput = document.getElementById("tts-input");
 
-  // Toggle staff TTS panel
+  // Toggle Staff TTS panel
   openStaffBtn.addEventListener("click", () => {
-    if (staffTTSPanel.style.display === "flex") {
-      staffTTSPanel.style.display = "none";
-    } else {
-      staffTTSPanel.style.display = "flex";
-    }
+    staffTTSPanel.style.display = staffTTSPanel.style.display === "flex" ? "none" : "flex";
   });
 
-  // Speak button
+  // Handle Speak button
   speakBtn.addEventListener("click", () => {
-    const text = ttsInput.value;
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    const text = ttsInput.value.trim();
+    if (!text) return;
+
+    // Send to WebSocket if connected
+    if (window.socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "speak_text", text }));
     } else {
+      // Fallback: browser TTS
       const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1;
+      utter.pitch = 1.05;
       speechSynthesis.speak(utter);
     }
-  });
-});
 
-// Send TTS text
-speakBtn.addEventListener("click", () => {
-  const text = ttsInput.value;
-  if(socket && socket.readyState === WebSocket.OPEN){
-    socket.send(JSON.stringify({type:"speak_text", text}));
-  } else {
-    // fallback browser TTS
-    const utter = new SpeechSynthesisUtterance(text);
-    speechSynthesis.speak(utter);
-  }
+    ttsInput.value = ""; // clear input
+  });
 });
 
 // Live2D TTS animation helper
@@ -274,5 +267,6 @@ function speakWithModel(text, emotion="neutral"){
 
 </body>
 </html>
+
 
 
