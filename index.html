@@ -56,7 +56,8 @@ canvas {
 }
 
 /* DISPENSER */
-#dispenser-panel {
+
+  #dispenser-panel {
   position: absolute;
   top: 50%;
   right: 35px;
@@ -72,21 +73,19 @@ canvas {
   text-align: center;
   z-index: 10;
 }
+  
 
 #dispenser-username {
   font-weight: 700;
   margin-bottom: 10px;
 }
 
-#dispenser-bottle {
-  width: 90px;
-  margin: 10px 0;
-}
 
 #dispenser-medicine {
   font-size: 14px;
   font-weight: 600;
 }
+  
 
 /* STAFF LOGIN BUTTON */
 #staff-login-btn {
@@ -176,7 +175,6 @@ canvas {
 <!-- DISPENSER -->
 <div id="dispenser-panel">
   <div id="dispenser-username"></div>
-  <img id="dispenser-bottle" src="Samples/Resources/bottle_empty.png">
   <div id="dispenser-medicine"></div>
 </div>
 
@@ -194,7 +192,6 @@ canvas {
 /* ELEMENTS */
 const userText = document.getElementById("dispenser-username");
 const medText = document.getElementById("dispenser-medicine");
-const bottle = document.getElementById("dispenser-bottle");
 const ttsOutput = document.getElementById("tts-output");
 const dispenser = document.getElementById("dispenser-panel");
 const tts = document.getElementById("tts-panel");
@@ -202,7 +199,6 @@ const tts = document.getElementById("tts-panel");
 /* INIT BLANK */
 userText.textContent = "";
 medText.textContent = "";
-bottle.src = "Samples/Resources/bottle_empty.png";
 
 /* WEBSOCKET */
 const socket = new WebSocket("ws://127.0.0.1:8000/ws");
@@ -220,7 +216,6 @@ socket.onmessage = (event) => {
 
     case "medicine":
       medText.textContent = `${data.medicine || ""} – 1 dose`;
-      bottle.src = "Samples/Resources/bottle_empty.png";
       break;
 
     case "tts_status":
@@ -228,13 +223,15 @@ socket.onmessage = (event) => {
   // Trigger expression + gesture + lip sync
       speakWithModel(data.text, data.emotion || "neutral");
       break;
-
+      
+/*
     case "dispense_status":
       if (data.message === "done") {
         bottle.src =
           "https://raw.githubusercontent.com/jugendjohn/pixi-live2d-remake/main/Samples/Resources/bottle.png";
       }
       break;
+*/
 
     default:
       console.warn("Unknown WS message:", data);
@@ -309,6 +306,3 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
-
-
-
