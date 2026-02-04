@@ -21,6 +21,8 @@ canvas {
   inset: 0;
   width: 100vw !important;
   height: 100vh !important;
+  .pixi-container,
+  .pixi-container * {
   pointer-events: none;
 }
 
@@ -152,17 +154,14 @@ canvas {
   z-index: 20;
 }
 
-/* Disable pointer events for PIXI container as well */
-.pixi-container,
-.pixi-container * {
-  pointer-events: none !important;
+/* Explicitly re-enable UI */
+#staff-login-btn,
+#tts-panel,
+#staff-tts-panel,
+#patient-tab,
+#dispenser-panel {
+  pointer-events: auto;
 }
-
-body > canvas,
-body > div[style*="position: fixed"] {
-  pointer-events: none;
-}
-
   
 </style>
 </head>
@@ -319,4 +318,5 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
