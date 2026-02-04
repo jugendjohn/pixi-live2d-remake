@@ -144,6 +144,41 @@ canvas {
   cursor: pointer;
 }
 
+/* Staff Login Form Overlay */
+#staff-login-form {
+  display: none; /* hidden initially */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  padding: 20px;
+  z-index: 100;
+  flex-direction: column;
+  gap: 10px;
+  width: 300px;
+}
+#staff-login-form input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+#staff-login-form button {
+  padding: 8px;
+  border-radius: 6px;
+  border: none;
+  background: #4f6cff;
+  color: #fff;
+  cursor: pointer;
+}
+#staff-error {
+  color: red;
+  font-size: 14px;
+  min-height: 18px;
+}
+
 /* PATIENT TAB */
 #patient-tab {
   position: absolute;
@@ -174,34 +209,15 @@ canvas {
 <body>
 
 <!-- STAFF LOGIN BUTTON -->
-<div id="staff-login-btn" style="
-  position:fixed; top:16px; right:16px;
-  background:#4f6cff; color:#fff; padding:8px 14px;
-  border-radius:10px; cursor:pointer; font-weight:600; z-index:50;">
-  Staff Login
-</div>
+<div id="staff-login-btn" class="button">Staff Login</div>
 
-<!-- STAFF LOGIN FORM -->
-<div id="staff-login-form" style="
-    display:none;
-    position:fixed;
-    top:50%;
-    left:50%;
-    transform:translate(-50%,-50%);
-    background:#fff;
-    border-radius:12px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.2);
-    padding:20px;
-    z-index:100;
-    flex-direction:column;
-    gap:10px;
-    width:300px;
-">
+<!-- STAFF LOGIN FORM (overlay) -->
+<div id="staff-login-form">
   <h2>Staff Login</h2>
   <input id="staff-account" placeholder="Account">
   <input id="staff-password" type="password" placeholder="Password">
   <button id="login-staff">Login</button>
-  <div id="staff-error" style="color:red; font-size:14px;"></div>
+  <div id="staff-error"></div>
 </div>
 
 <!-- TTS DISPLAY -->
@@ -383,5 +399,6 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
