@@ -206,13 +206,31 @@ if(socket){
   };
 }
 
-// Toggle staff TTS panel
-openStaffBtn.addEventListener("click", () => {
-  if(staffTTSPanel.style.display === "flex"){
-    staffTTSPanel.style.display = "none";
-  } else {
-    staffTTSPanel.style.display = "flex";
-  }
+document.addEventListener("DOMContentLoaded", () => {
+  const staffTTSPanel = document.getElementById("staff-tts-panel");
+  const openStaffBtn = document.getElementById("open-staff-tts");
+  const speakBtn = document.getElementById("tts-button");
+  const ttsInput = document.getElementById("tts-input");
+
+  // Toggle staff TTS panel
+  openStaffBtn.addEventListener("click", () => {
+    if (staffTTSPanel.style.display === "flex") {
+      staffTTSPanel.style.display = "none";
+    } else {
+      staffTTSPanel.style.display = "flex";
+    }
+  });
+
+  // Speak button
+  speakBtn.addEventListener("click", () => {
+    const text = ttsInput.value;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "speak_text", text }));
+    } else {
+      const utter = new SpeechSynthesisUtterance(text);
+      speechSynthesis.speak(utter);
+    }
+  });
 });
 
 // Send TTS text
@@ -247,3 +265,4 @@ function speakWithModel(text, emotion="neutral"){
 
 </body>
 </html>
+
