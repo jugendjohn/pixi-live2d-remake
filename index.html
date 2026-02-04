@@ -173,8 +173,17 @@ canvas {
 
 <body>
 
-<!-- STAFF LOGIN -->
+<!-- STAFF LOGIN BUTTON -->
 <div id="staff-login-btn">Staff Login</div>
+
+<!-- STAFF LOGIN FORM (hidden by default) -->
+<div id="staff-form-overlay" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:20px; z-index:100; display:flex; flex-direction:column; gap:12px; width:300px;">
+  <h2>Staff Login</h2>
+  <input id="staff-account" placeholder="Account">
+  <input id="staff-password" type="password" placeholder="Password">
+  <button id="login-staff">Login</button>
+  <div id="staff-error" style="color:red; font-size:14px;"></div>
+</div>
 
 <!-- TTS DISPLAY -->
 <div id="tts-panel">
@@ -299,17 +308,40 @@ function speakWithModel(text, emotion = "neutral") {
 
 /* STAFF LOGIN */
 const staffBtn = document.getElementById("staff-login-btn");
-const staffPanel = document.getElementById("staff-tts-panel");
+const staffOverlay = document.getElementById("staff-form-overlay");
 const patientTab = document.getElementById("patient-tab");
+const ttsPanel = document.getElementById("tts-panel");
+const dispenserPanel = document.getElementById("dispenser-panel");
+const userText = document.getElementById("dispenser-username");
+const bottle = document.getElementById("dispenser-bottle");
+const medText = document.getElementById("dispenser-medicine");
 
+// Show the staff login form when button is clicked
 staffBtn.onclick = () => {
-  const pwd = prompt("Enter staff password:");
-  if (pwd === "password") {
-    staffPanel.style.display = "flex";
-    patientTab.style.display = "block";
+  staffOverlay.style.display = "flex";
+};
+
+// Staff login logic
+document.getElementById("login-staff").onclick = () => {
+  const account = document.getElementById("staff-account").value.trim();
+  const password = document.getElementById("staff-password").value.trim();
+
+  if(account === "admin" && password === "password"){
+    // Hide login overlay & button
+    staffOverlay.style.display = "none";
     staffBtn.style.display = "none";
+
+    // Show TTS, dispenser, patient tab
+    ttsPanel.style.display = "flex";
+    dispenserPanel.style.display = "flex";
+    patientTab.style.display = "block";
+
+    // Update dispenser for staff
+    userText.textContent = account;
+    if(bottle) bottle.style.display = "none";
+    if(medText) medText.style.display = "none";
   } else {
-    alert("Invalid password");
+    document.getElementById("staff-error").textContent = "Invalid login";
   }
 };
 
@@ -325,8 +357,3 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
-
-
-
-
-
