@@ -21,8 +21,13 @@ canvas {
   inset: 0;
   width: 100vw !important;
   height: 100vh !important;
-  .pixi-container,
-  .pixi-container * {
+  pointer-events: none;
+}
+
+  
+/* PIXI internal containers */
+.pixi-container,
+.pixi-container * {
   pointer-events: none;
 }
 
@@ -318,5 +323,6 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
