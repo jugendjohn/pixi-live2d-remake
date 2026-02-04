@@ -57,38 +57,35 @@ canvas {
 
 /* STAFF TTS PANEL */
 #staff-tts-panel {
-  position: absolute;
-  bottom: 30px;
-  left: 35%;
-  width: 400px;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-  padding: 20px;
   display: none; /* hidden initially */
-  flex-direction: column;
-  gap: 12px;
-  z-index: 15;
-}
-
-#staff-tts-panel textarea {
-  min-height: 100px;
-  resize: none;
-  width: 100%;
-  border-radius: 10px;
-  border: 1px solid #ccc;
-  padding: 10px;
-}
-
-#staff-tts-panel button {
-  height: 44px;
+  position: fixed;
+  bottom: 60px; /* above the toggle button */
+  right: 16px;
+  width: 300px;
+  background: #fff;
   border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  padding: 16px;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 100;
+}
+#staff-tts-panel textarea {
+  width: 100%;
+  min-height: 80px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  padding: 8px;
+  resize: none;
+}
+#staff-tts-panel button {
+  padding: 8px;
+  border-radius: 8px;
   border: none;
-  background: linear-gradient(135deg,#6b8cff,#4f6cff);
+  background: #4f6cff;
   color: #fff;
-  font-size: 15px;
-  font-weight: 600;
   cursor: pointer;
+  font-weight: 600;
 }
 
 /* STAFF TTS TOGGLE BUTTON */
@@ -149,11 +146,23 @@ canvas {
 
 <body>
 
-<!-- MAIN TTS PANEL -->
+<!-- TTS DISPLAY -->
 <div id="tts-panel">
   <div class="tts-header">Virtual Companion</div>
   <div id="tts-output"></div>
-  <button id="open-staff-tts">Open Staff TTS</button>
+  <!-- Staff TTS toggle button bottom-right -->
+  <button id="open-staff-tts" style="
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    background: #4f6cff;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  ">Staff TTS</button>
 </div>
 
 <!-- STAFF TTS PANEL -->
@@ -265,4 +274,5 @@ function speakWithModel(text, emotion="neutral"){
 
 </body>
 </html>
+
 
