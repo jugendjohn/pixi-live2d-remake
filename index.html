@@ -176,11 +176,26 @@ canvas {
 <!-- STAFF LOGIN BUTTON -->
 <div id="staff-login-btn">Staff Login</div>
 
-<!-- STAFF LOGIN FORM (hidden by default) -->
-<div id="staff-form-overlay" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.2); padding:20px; z-index:100; display:flex; flex-direction:column; gap:12px; width:300px;">
+<!-- STAFF LOGIN FORM (HIDDEN INITIALLY) -->
+<div id="staff-login-form" style="
+    display:none;
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:#fff;
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    padding:20px;
+    z-index:100;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    width:300px;
+">
   <h2>Staff Login</h2>
   <input id="staff-account" placeholder="Account">
-  <input id="staff-password" type="password" placeholder="Password">
+  <input id="staff-password" type="password" placeholder="Password" type="password">
   <button id="login-staff">Login</button>
   <div id="staff-error" style="color:red; font-size:14px;"></div>
 </div>
@@ -308,27 +323,31 @@ function speakWithModel(text, emotion = "neutral") {
 
 /* STAFF LOGIN */
 const staffBtn = document.getElementById("staff-login-btn");
-const staffOverlay = document.getElementById("staff-form-overlay");
-const patientTab = document.getElementById("patient-tab");
+const staffForm = document.getElementById("staff-login-form");
+const loginBtn = document.getElementById("login-staff");
+const staffError = document.getElementById("staff-error");
+
+// Panels to show on login
 const ttsPanel = document.getElementById("tts-panel");
 const dispenserPanel = document.getElementById("dispenser-panel");
+const patientTab = document.getElementById("patient-tab");
 const userText = document.getElementById("dispenser-username");
 const bottle = document.getElementById("dispenser-bottle");
 const medText = document.getElementById("dispenser-medicine");
 
-// Show the staff login form when button is clicked
+// Show login form on top-right button click
 staffBtn.onclick = () => {
-  staffOverlay.style.display = "flex";
+  staffForm.style.display = "flex";
 };
 
-// Staff login logic
-document.getElementById("login-staff").onclick = () => {
+// Handle login
+loginBtn.onclick = () => {
   const account = document.getElementById("staff-account").value.trim();
   const password = document.getElementById("staff-password").value.trim();
 
   if(account === "admin" && password === "password"){
-    // Hide login overlay & button
-    staffOverlay.style.display = "none";
+    // Hide login form and login button
+    staffForm.style.display = "none";
     staffBtn.style.display = "none";
 
     // Show TTS, dispenser, patient tab
@@ -340,10 +359,13 @@ document.getElementById("login-staff").onclick = () => {
     userText.textContent = account;
     if(bottle) bottle.style.display = "none";
     if(medText) medText.style.display = "none";
+
+    staffError.textContent = "";
   } else {
-    document.getElementById("staff-error").textContent = "Invalid login";
+    staffError.textContent = "Invalid login";
   }
 };
+
 
 /* STAFF MANUAL TTS */
 document.getElementById("tts-button").onclick = () => {
@@ -357,3 +379,4 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
