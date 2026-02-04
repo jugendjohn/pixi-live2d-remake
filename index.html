@@ -347,21 +347,37 @@ const staffForm = document.getElementById("staff-login-form");
 const loginBtn = document.getElementById("login-staff");
 const staffError = document.getElementById("staff-error");
 
-// Panels to show on successful login
 const ttsPanel = document.getElementById("tts-panel");
 const dispenserPanel = document.getElementById("dispenser-panel");
 const patientTab = document.getElementById("patient-tab");
 const userText = document.getElementById("dispenser-username");
 const medText = document.getElementById("dispenser-medicine");
 
-// Make sure the login form is hidden on page load
-staffForm.style.display = "none";
-
-// Show login form when button clicked
-staffBtn.onclick = () => {
+// Show login form when top-right button clicked
+staffBtn.addEventListener("click", () => {
   staffForm.style.display = "flex";
-};
+});
 
+// Handle login
+loginBtn.addEventListener("click", () => {
+  const account = document.getElementById("staff-account").value.trim();
+  const password = document.getElementById("staff-password").value.trim();
+
+  if(account === "admin" && password === "password"){
+    staffForm.style.display = "none";
+    staffBtn.style.display = "none";
+
+    ttsPanel.style.display = "flex";
+    dispenserPanel.style.display = "flex";
+    patientTab.style.display = "block";
+
+    userText.textContent = account;
+    medText.style.display = "none";
+    staffError.textContent = "";
+  } else {
+    staffError.textContent = "Invalid login";
+  }
+});
 // Handle login button click
 loginBtn.onclick = () => {
   const account = document.getElementById("staff-account").value.trim();
@@ -399,6 +415,7 @@ document.getElementById("tts-button").onclick = () => {
 
 </body>
 </html>
+
 
 
 
