@@ -1,161 +1,157 @@
-// ===============================
-// TTS + Expression + Gesture + Lip Sync
-// (Haru model compliant, no sounds)
-// ===============================
-const ttsInput = document.getElementById("tts-input");
-const ttsButton = document.getElementById("tts-button");
-const ttsOutput = document.getElementById("tts-output");
+(async () => {
+  if (typeof PIXI === "undefined") {
+    console.error("❌ PIXI not loaded");
+    return;
+  }
 
-let voices = [];
-speechSynthesis.onvoiceschanged = () => {
-  voices = speechSynthesis.getVoices();
-};
+  if (!PIXI.live2d?.Live2DModel) {
+    console.error("❌ pixi-live2d-display not loaded");
+    return;
+  }
 
-function getFemaleVoice() {
-  return voices.find(v =>
-    /female|zira|samantha|victoria|susan/i.test(v.name)
-  );
-}
+  const { Live2DModel } = PIXI.live2d;
 
-// ===============================
-// Live2D Helpers (Cubism 4)
-// ===============================
-function setExpression(name) {
-  const model = window.live2dModel;
-  if (!model?.internalModel?.expressionManager) return;
+  // =================================================
+  // PIXI APP
+  // =================================================
+  const app = new PIXI.Application({
+    background: "#f4f3f2",
+    resizeTo: window,
+    autoStart: true,
+  });
+
+  // Canvas behind UI
+  app.view.style.position = "fixed";
+  app.view.style.inset = "0";
+  app.view.style.pointerEvents = "none";
+  document.body.appendChild(app.view);
+
+  const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
 
   try {
-    model.internalModel.expressionManager.setExpression(name);
-  } catch {
-    console.warn("Expression not found:", name);
-  }
-}
+    // =================================================
+    // LOAD MODEL
+    // =================================================
+    const live2dModel = await Live2DModel.from(MODEL_PATH);
 
-function playMotion(group, index = 0, priority = 2) {
-  const model = window.live2dModel;
-  if (!model?.internalModel?.motionManager) return;
+    // Placement & scale
+    live2dModel.anchor.set(0.5);
+    const scale = (app.screen.height / live2dModel.height) * 0.9;
+    live2dModel.scale.set(scale);
+    live2dModel.x = app.screen.width * 0.25;
+    live2dModel.y = app.screen.height / 2;
 
-  try {
-    model.internalModel.motionManager.startMotion(group, index, priority);
-  } catch {
-    console.warn("Motion not found:", group, index);
-  }
-}
+    live2dModel.eventMode = "static";
+    live2dModel.cursor = "pointer";
 
-// ===============================
-// Text → Expression Logic
-// ===============================
-function analyzeExpression(text) {
-  const t = text.toLowerCase();
+    app.stage.addChild(live2dModel);
 
-  if (t.includes("thank") || t.includes("welcome"))
-    return "F02"; // happy
+    // =================================================
+    // INTERNAL REFERENCES (shared with model.js)
+    // =================================================
+    const internalModel = live2dModel.internalModel;
+    const coreModel = internalModel.coreModel;
 
-  if (t.includes("warning") || t.includes("important"))
-    return "F04"; // serious
+    internalModel.settings.eyeBlink = true;
 
-  if (t.includes("why") || t.includes("how"))
-    return "F05"; // thinking
+    // Expose globals (IMPORTANT)
+    window.live2dModel = live2dModel;
+    window.live2dCore = coreModel;
+    window.pixiApp = app;
 
-  if (t.includes("!") || t.includes("wow"))
-    return "F06"; // surprised
+    console.log("✅ Live2D model ready");
 
-  if (t.includes("sorry") || t.includes("unfortunately"))
-    return "F07"; // sad
+    // =================================================
+    // INTERACTION STATE
+    // =================================================
+    let isDragging = false;
+    let dragX = 0;
+    let dragY = 0;
 
-  return "F01"; // neutral
-}
+    const stopDrag = () => {
+      isDragging = false;
+      dragX = 0;
+      dragY = 0;
+    };
 
-// ===============================
-// TTS Button
-// ===============================
-ttsButton.addEventListener("click", () => {
-  const text = ttsInput.value.trim();
-  if (!text) return;
+    // =================================================
+    // POINTER EVENTS
+    // =================================================
+    live2dModel.on("pointerdown", (e) => {
+      const { x, y } = e.data.global;
+      isDragging = true;
 
-  speechSynthesis.cancel();
+      // Head → random expression (F01–F08)
+      if (live2dModel.hitTest("Head", x, y)) {
+        const exprMgr = internalModel.expressionManager;
+        const expressions = exprMgr?._expressions;
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.pitch = 1;
-  utterance.rate = 1;
-  utterance.voice = getFemaleVoice() || null;
-
-  // ===============================
-  // Word output
-  // ===============================
-  const words = text.split(/\s+/);
-  ttsOutput.textContent = "";
-  let wordIndex = 0;
-
-  const wordTimer = setInterval(() => {
-    if (wordIndex >= words.length) return clearInterval(wordTimer);
-    ttsOutput.textContent += words[wordIndex] + " ";
-    wordIndex++;
-  }, 150);
-
-  // ===============================
-  // On TTS start
-  // ===============================
-  utterance.onstart = () => {
-    const core = window.live2dCore;
-    if (!core) return console.warn("❌ Live2D core not ready");
-
-    // Expression
-    const expression = analyzeExpression(text);
-    setExpression(expression);
-
-    // Idle motion
-    playMotion("Idle", Math.random() > 0.5 ? 1 : 0);
-
-    // Random TapBody gestures during speech
-    const gestureTimer = setInterval(() => {
-      const idx = Math.floor(Math.random() * 4);
-      playMotion("TapBody", idx, 3);
-    }, 2800);
-
-    utterance._gestureTimer = gestureTimer;
-
-    // ===============================
-    // Lip Sync (ParamMouthOpenY only)
-    // ===============================
-    let currentWord = 0;
-    const wordDuration = 300;
-    let elapsed = 0;
-
-    const lipTicker = new PIXI.Ticker();
-    lipTicker.add((delta) => {
-      elapsed += delta * 16.67;
-
-      const cycle = elapsed % wordDuration;
-      const mouth =
-        cycle < wordDuration / 2 ? 1.0 : 0.2;
-
-      core.setParameterValueById("ParamMouthOpenY", mouth);
-
-      if (elapsed >= (currentWord + 1) * wordDuration) {
-        currentWord++;
-        if (currentWord >= words.length) {
-          lipTicker.stop();
-          core.setParameterValueById("ParamMouthOpenY", 0);
+        if (expressions && expressions.size > 0) {
+          const keys = [...expressions.keys()];
+          const pick = keys[Math.floor(Math.random() * keys.length)];
+          exprMgr.setExpression(pick);
         }
+        return;
+      }
+
+      // Body → random TapBody gesture
+      if (live2dModel.hitTest("Body", x, y)) {
+        const motions =
+          internalModel.motionManager?._motions?.TapBody;
+
+        if (motions && motions.length > 0) {
+          const index = Math.floor(Math.random() * motions.length);
+          internalModel.motionManager.startMotion(
+            "TapBody",
+            index,
+            3
+          );
+        }
+        return;
       }
     });
 
-    lipTicker.start();
-  };
+    live2dModel.on("pointermove", (e) => {
+      const { x, y } = e.data.global;
 
-  // ===============================
-  // On TTS end
-  // ===============================
-  utterance.onend = () => {
-    clearInterval(wordTimer);
+      if (!isDragging) {
+        live2dModel.focus(x, y);
+        return;
+      }
 
-    if (utterance._gestureTimer)
-      clearInterval(utterance._gestureTimer);
+      dragX = (x - live2dModel.x) / (live2dModel.width * 0.5);
+      dragY = (y - live2dModel.y) / (live2dModel.height * 0.5);
 
-    setExpression("F01");
-    playMotion("Idle", 0);
-  };
+      dragX = Math.max(-1, Math.min(1, dragX));
+      dragY = Math.max(-1, Math.min(1, dragY));
+    });
 
-  speechSynthesis.speak(utterance);
-});
+    live2dModel.on("pointerup", stopDrag);
+    live2dModel.on("pointerupoutside", stopDrag);
+
+    // =================================================
+    // TICKER – BODY / EYE FOLLOW
+    // =================================================
+    const ticker = new PIXI.Ticker();
+
+    ticker.add(() => {
+      const dx = isDragging ? dragX : 0;
+      const dy = isDragging ? dragY : 0;
+
+      coreModel.setParameterValueById("ParamAngleX", dx * 30);
+      coreModel.setParameterValueById("ParamAngleY", dy * 30);
+      coreModel.setParameterValueById("ParamAngleZ", dx * dy * -30);
+      coreModel.setParameterValueById("ParamBodyAngleX", dx * 10);
+      coreModel.setParameterValueById("ParamEyeBallX", dx);
+      coreModel.setParameterValueById("ParamEyeBallY", dy);
+
+      live2dModel.update(1);
+      app.renderer.render(app.stage);
+    });
+
+    ticker.start();
+
+  } catch (err) {
+    console.error("❌ Live2D load failed:", err);
+  }
+})();
