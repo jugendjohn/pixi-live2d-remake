@@ -2,18 +2,17 @@
 // TTS + Expression + Gesture + Lip Sync
 // (Haru model compliant, no sounds)
 // ===============================
+const ttsInput = document.getElementById("tts-input");
+const ttsButton = document.getElementById("tts-button");
+const ttsOutput = document.getElementById("tts-output");
 
-const ttsInputEl = document.getElementById("tts-input");
-const ttsButtonEl = document.getElementById("tts-button");
-const ttsOutputEl = document.getElementById("tts-output");
-
-let availableVoices = [];
+let voices = [];
 speechSynthesis.onvoiceschanged = () => {
-  availableVoices = speechSynthesis.getVoices();
+  voices = speechSynthesis.getVoices();
 };
 
 function getFemaleVoice() {
-  return availableVoices.find(v =>
+  return voices.find(v =>
     /female|zira|samantha|victoria|susan/i.test(v.name)
   );
 }
@@ -21,25 +20,25 @@ function getFemaleVoice() {
 // ===============================
 // Live2D Helpers (Cubism 4)
 // ===============================
-function setExpression(expressionName) {
-  const model = window.model;
+function setExpression(name) {
+  const model = window.live2dModel;
   if (!model?.internalModel?.expressionManager) return;
 
   try {
-    model.internalModel.expressionManager.setExpression(expressionName);
+    model.internalModel.expressionManager.setExpression(name);
   } catch {
-    console.warn("Expression not found:", expressionName);
+    console.warn("Expression not found:", name);
   }
 }
 
-function playMotion(groupName, index = 0, priority = 2) {
-  const model = window.model;
+function playMotion(group, index = 0, priority = 2) {
+  const model = window.live2dModel;
   if (!model?.internalModel?.motionManager) return;
 
   try {
-    model.internalModel.motionManager.startMotion(groupName, index, priority);
+    model.internalModel.motionManager.startMotion(group, index, priority);
   } catch {
-    console.warn("Motion not found:", groupName, index);
+    console.warn("Motion not found:", group, index);
   }
 }
 
@@ -70,8 +69,8 @@ function analyzeExpression(text) {
 // ===============================
 // TTS Button
 // ===============================
-ttsButtonEl.addEventListener("click", () => {
-  const text = ttsInputEl.value.trim();
+ttsButton.addEventListener("click", () => {
+  const text = ttsInput.value.trim();
   if (!text) return;
 
   speechSynthesis.cancel();
@@ -85,12 +84,12 @@ ttsButtonEl.addEventListener("click", () => {
   // Word output
   // ===============================
   const words = text.split(/\s+/);
-  ttsOutputEl.textContent = "";
+  ttsOutput.textContent = "";
   let wordIndex = 0;
 
   const wordTimer = setInterval(() => {
     if (wordIndex >= words.length) return clearInterval(wordTimer);
-    ttsOutputEl.textContent += words[wordIndex] + " ";
+    ttsOutput.textContent += words[wordIndex] + " ";
     wordIndex++;
   }, 150);
 
