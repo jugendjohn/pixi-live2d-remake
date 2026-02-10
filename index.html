@@ -176,18 +176,73 @@ if (socket) {
   };
 }
 
-// Speak button
+/* ===============================
+   Core Female TTS Function
+================================ */
+  
+let voices = [];
+speechSynthesis.onvoiceschanged = () => {
+  voices = speechSynthesis.getVoices();
+};
+
+function getFemaleVoice() {
+  return voices.find(v =>
+    /female|zira|samantha|victoria|susan/i.test(v.name)
+  ) || null;
+}
+
+function playFemaleTTS(text) {
+  if (!text) return;
+
+  speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = 1;
+  utterance.pitch = 1;
+  utterance.voice = getFemaleVoice();
+
+  /* Word-by-word output */
+  const words = text.split(/\s+/);
+  ttsOutput.textContent = "";
+  let index = 0;
+
+  const wordTimer = setInterval(() => {
+    if (index >= words.length) {
+      clearInterval(wordTimer);
+      return;
+    }
+    ttsOutput.textContent += words[index] + " ";
+    index++;
+  }, 150);
+
+  /* Live2D sync (existing helper) */
+  utterance.onstart = () => {
+    if (typeof speakWithModel === "function") {
+      speakWithModel(text, "neutral");
+    }
+  };
+
+  utterance.onend = () => {
+    clearInterval(wordTimer);
+  };
+
+  speechSynthesis.speak(utterance);
+}
+  
+/* ===============================
+   Staff Speak Button
+================================ */
 speakBtn.addEventListener("click", () => {
   const text = ttsInput.value.trim();
   if (!text) return;
 
   if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ type: "speak_text", text }));
+    socket.send(JSON.stringify({
+      type: "speak_text",
+      text
+    }));
   } else {
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.rate = 1;
-    utter.pitch = 1.05;
-    speechSynthesis.speak(utter);
+    playFemaleTTS(text);
   }
 
   ttsInput.value = "";
@@ -234,3 +289,4 @@ setTimeout(() => {
 
 </body>
 </html>
+
