@@ -1,4 +1,11 @@
-(async () => {
+// Model.js — GitHub-friendly ES module
+// Exposes live2dModel & live2dCore globally for other scripts
+
+import * as PIXI from "https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js";
+import "https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/index.min.js";
+import "https://cdn.jsdelivr.net/npm/pixi-live2d-display/dist/cubism4.min.js";
+
+export async function loadModel() {
   if (typeof PIXI === "undefined") return console.error("❌ PIXI NOT LOADED");
   if (!PIXI.live2d || !PIXI.live2d.Live2DModel)
     return console.error("❌ pixi-live2d-display NOT LOADED");
@@ -11,6 +18,7 @@
     autoStart: true,
   });
 
+  // Canvas behind UI, allow clicks
   app.view.style.position = "fixed";
   app.view.style.top = "0";
   app.view.style.left = "0";
@@ -24,6 +32,7 @@
   try {
     const live2dModel = await Live2DModel.from(MODEL_PATH);
 
+    // Placement & scale
     live2dModel.anchor.set(0.5);
     const scaleFactor = (app.screen.height / live2dModel.height) * 0.9;
     live2dModel.scale.set(scaleFactor);
@@ -47,7 +56,6 @@
     // Interaction handlers (drag, click)
     let dragging = false;
     let dragX = 0, dragY = 0;
-
     const stopDrag = () => { dragging = false; dragX = 0; dragY = 0; };
 
     live2dModel.on("pointerdown", e => {
@@ -55,6 +63,7 @@
       const y = e.data.global.y;
       dragging = true;
 
+      // Head click: random expression
       if (live2dModel.hitTest("Head", x, y)) {
         const expressions =
           live2dModel.internalModel.motionManager?.expressionManager?._motions;
@@ -66,6 +75,7 @@
         return;
       }
 
+      // Body click: random TapBody motion
       if (live2dModel.hitTest("Body", x, y)) {
         const tapMotions = live2dModel.motions?.TapBody;
         if (tapMotions && tapMotions.length > 0) {
@@ -114,7 +124,9 @@
     });
     ticker.start();
 
-  } catch(e){
+    return live2dModel;
+
+  } catch(e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
-})();
+}
