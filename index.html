@@ -15,7 +15,7 @@ html, body {
   font-family: "Segoe UI", Roboto, sans-serif;
 }
 
-/* PIXI canvas pass-through */
+/* Allow clicks through canvas */
 canvas {
   position: fixed;
   inset: 0;
@@ -24,87 +24,18 @@ canvas {
   pointer-events: none;
 }
 
-/* =========================
-   LOGIN OVERLAY
-========================= */
-#login-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 999;
-}
-
-.login-box {
-  background: #fff;
-  width: 360px;
-  padding: 26px;
-  border-radius: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  text-align: center;
-}
-
-.login-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.login-buttons button {
-  flex: 1;
-  padding: 10px;
-  border-radius: 10px;
-  border: none;
-  background: #4f6cff;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.login-form {
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.login-form input {
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-.login-form button {
-  padding: 8px;
-  border-radius: 8px;
-  border: none;
-  background: #6b8cff;
-  color: #fff;
-  cursor: pointer;
-}
-
-.login-error {
-  color: red;
-  font-size: 13px;
-  min-height: 16px;
-}
-
-/* =========================
-   TTS PANEL
-========================= */
+/* TTS PANEL */
 #tts-panel {
   position: absolute;
   top: 50%;
   left: 35%;
   transform: translateY(-50%);
   width: 400px;
-  background: #fff;
+  background: #ffffff;
   border-radius: 20px;
   box-shadow: 0 25px 50px rgba(0,0,0,0.15);
   padding: 24px;
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 12px;
   z-index: 10;
@@ -124,37 +55,21 @@ canvas {
   border: 1px solid #e0e0e0;
 }
 
-/* Staff TTS toggle button */
-#open-staff-tts {
-  align-self: flex-end;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: none;
-  background: #4f6cff;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  display: none;
-}
-
-/* =========================
-   STAFF TTS PANEL
-========================= */
+/* STAFF TTS PANEL */
 #staff-tts-panel {
+  display: none; /* hidden initially */
   position: fixed;
-  bottom: 60px;
+  bottom: 60px; /* above the toggle button */
   right: 16px;
   width: 300px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   padding: 16px;
-  display: none;
   flex-direction: column;
   gap: 10px;
   z-index: 100;
 }
-
 #staff-tts-panel textarea {
   width: 100%;
   min-height: 80px;
@@ -163,20 +78,28 @@ canvas {
   padding: 8px;
   resize: none;
 }
-
 #staff-tts-panel button {
   padding: 8px;
   border-radius: 8px;
   border: none;
   background: #4f6cff;
   color: #fff;
-  font-weight: 600;
   cursor: pointer;
+  font-weight: 600;
 }
 
-/* =========================
-   DISPENSER
-========================= */
+/* STAFF TTS TOGGLE BUTTON */
+#open-staff-tts {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  background: #4f6cff;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+/* DISPENSER */
 #dispenser-panel {
   position: absolute;
   top: 50%;
@@ -187,7 +110,7 @@ canvas {
   border-radius: 20px;
   box-shadow: 0 25px 50px rgba(0,0,0,0.15);
   padding: 16px;
-  display: none;
+  display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
@@ -223,46 +146,33 @@ canvas {
 
 <body>
 
-<!-- LOGIN OVERLAY -->
-<div id="login-overlay">
-  <div class="login-box">
-    <h2>Welcome</h2>
-
-    <div class="login-buttons">
-      <button id="btn-patient">Patient</button>
-      <button id="btn-visitor">Visitor</button>
-      <button id="btn-staff">Staff</button>
-    </div>
-
-    <div class="login-form" id="patient-form">
-      <input id="patient-id" placeholder="Patient ID">
-      <input id="patient-name" placeholder="Patient Name">
-      <button id="verify-patient">Verify</button>
-      <div class="login-error" id="patient-error"></div>
-    </div>
-
-    <div class="login-form" id="staff-form">
-      <input id="staff-account" placeholder="Account">
-      <input id="staff-password" type="password" placeholder="Password">
-      <button id="login-staff">Login</button>
-      <div class="login-error" id="staff-error"></div>
-    </div>
-  </div>
-</div>
-
-<!-- MAIN UI -->
+<!-- TTS DISPLAY -->
 <div id="tts-panel">
   <div class="tts-header">Virtual Companion</div>
   <div id="tts-output"></div>
-  <button id="open-staff-tts">Staff TTS</button>
+  <!-- Staff TTS toggle button bottom-right -->
+  <button id="open-staff-tts" style="
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: none;
+    background: #4f6cff;
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+  ">Staff TTS</button>
 </div>
 
+<!-- STAFF TTS PANEL -->
 <div id="staff-tts-panel">
   <div class="tts-header">Staff TTS Control</div>
-  <textarea id="tts-input"></textarea>
+  <textarea id="tts-input" placeholder="Enter text to speak"></textarea>
   <button id="tts-button">Speak</button>
 </div>
 
+<!-- DISPENSER PANEL -->
 <div id="dispenser-panel">
   <div id="dispenser-username"></div>
   <div id="dispenser-medicine"></div>
@@ -279,68 +189,85 @@ canvas {
 <script src="Main/Model.js"></script>
 
 <script>
-/* ---------------- LOGIN LOGIC ---------------- */
-const patients = [{id:"001",name:"Amir"},{id:"002",name:"John"}];
+const ttsOutput = document.getElementById("tts-output");
+const staffTTSPanel = document.getElementById("staff-tts-panel");
+const ttsInput = document.getElementById("tts-input");
+const speakBtn = document.getElementById("tts-button");
+const openStaffBtn = document.getElementById("open-staff-tts");
 
-const overlay = document.getElementById("login-overlay");
-const ttsPanel = document.getElementById("tts-panel");
-const staffTTS = document.getElementById("staff-tts-panel");
-const dispenser = document.getElementById("dispenser-panel");
-const patientTab = document.getElementById("patient-tab");
-const staffToggle = document.getElementById("open-staff-tts");
+let socket = null;
 
-document.getElementById("btn-visitor").onclick = () => {
-  overlay.style.display = "none";
-  ttsPanel.style.display = "flex";
-};
+try {
+  if (location.protocol !== "https:") {
+    socket = new WebSocket("ws://127.0.0.1:8000/ws");
+  }
+} catch(e) {
+  console.error("WebSocket init failed:", e);
+}
 
-document.getElementById("btn-patient").onclick = () => {
-  document.getElementById("patient-form").style.display = "flex";
-  document.getElementById("staff-form").style.display = "none";
-};
+if(socket){
+  socket.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if(data.type === "tts_status"){
+      ttsOutput.textContent = data.text || "";
+      speakWithModel(data.text, data.emotion || "neutral");
+    }
+  };
+}
 
-document.getElementById("btn-staff").onclick = () => {
-  document.getElementById("staff-form").style.display = "flex";
-  document.getElementById("patient-form").style.display = "none";
-};
+// Ensure DOM is ready
+document.addEventListener("DOMContentLoaded", () => {
+  const staffTTSPanel = document.getElementById("staff-tts-panel");
+  const openStaffBtn = document.getElementById("open-staff-tts");
+  const speakBtn = document.getElementById("tts-button");
+  const ttsInput = document.getElementById("tts-input");
 
-document.getElementById("verify-patient").onclick = () => {
-  const id = patient-id.value.trim();
-  const name = patient-name.value.trim().toLowerCase();
-  const p = patients.find(x=>x.id===id && x.name.toLowerCase()===name);
-  if(!p) return patient-error.textContent="Invalid details";
-  overlay.style.display="none";
-  ttsPanel.style.display="flex";
-  dispenser.style.display="flex";
-  dispenser-username.textContent=p.name;
-};
+  // Toggle Staff TTS panel
+  openStaffBtn.addEventListener("click", () => {
+    staffTTSPanel.style.display = staffTTSPanel.style.display === "flex" ? "none" : "flex";
+  });
 
-document.getElementById("login-staff").onclick = () => {
-  if(staff-account.value==="admin" && staff-password.value==="password"){
-    overlay.style.display="none";
-    ttsPanel.style.display="flex";
-    dispenser.style.display="flex";
-    staffToggle.style.display="block";
-    patientTab.style.display="block";
-    dispenser-username.textContent="admin";
-    dispenser-medicine.style.display="none";
-  } else staff-error.textContent="Invalid login";
-};
+  // Handle Speak button
+  speakBtn.addEventListener("click", () => {
+    const text = ttsInput.value.trim();
+    if (!text) return;
 
-/* ---------------- STAFF TTS ---------------- */
-staffToggle.onclick = () => {
-  staffTTS.style.display = staffTTS.style.display==="flex"?"none":"flex";
-};
+    // Send to WebSocket if connected
+    if (window.socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "speak_text", text }));
+    } else {
+      // Fallback: browser TTS
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.rate = 1;
+      utter.pitch = 1.05;
+      speechSynthesis.speak(utter);
+    }
 
-document.getElementById("tts-button").onclick = () => {
-  const text = tts-input.value.trim();
-  if(!text) return;
-  if(window.socket?.readyState===1){
-    socket.send(JSON.stringify({type:"speak_text",text}));
-  } else speechSynthesis.speak(new SpeechSynthesisUtterance(text));
-  tts-input.value="";
-};
+    ttsInput.value = ""; // clear input
+  });
+});
+
+// Live2D TTS animation helper
+function speakWithModel(text, emotion="neutral"){
+  if(!window.model) return;
+  const expressionMap = {happy:"Smile", sad:"Frown", angry:"Angry", surprise:"Surprised", neutral:null};
+  const expr = expressionMap[emotion];
+  if(expr) try{ window.model.expression(expr); } catch(e){ }
+  try{
+    const motions = window.model.motions?.TapBody;
+    if(motions && motions.length>0){
+      const m = motions[Math.floor(Math.random()*motions.length)];
+      window.model.motion("TapBody", m.File);
+    }
+  }catch(e){}
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate=1; utter.pitch=1.05; speechSynthesis.speak(utter);
+}
 </script>
 
 </body>
 </html>
+
+
+
+
