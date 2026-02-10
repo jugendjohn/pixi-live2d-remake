@@ -171,7 +171,7 @@ if (socket) {
     const data = JSON.parse(event.data);
     if (data.type === "tts_status") {
       ttsOutput.textContent = data.text || "";
-      speakWithModel(data.text, data.emotion || "neutral");
+      playFemaleTTS(data.text); // always female TTS
     }
   };
 }
@@ -180,15 +180,16 @@ if (socket) {
    Core Female TTS Function
 ================================ */
   
+/* ===============================
+   Female Voice TTS + Live2D sync
+================================ */
 let voices = [];
 speechSynthesis.onvoiceschanged = () => {
   voices = speechSynthesis.getVoices();
 };
 
 function getFemaleVoice() {
-  return voices.find(v =>
-    /female|zira|samantha|victoria|susan/i.test(v.name)
-  ) || null;
+  return voices.find(v => /female|zira|samantha|victoria|susan/i.test(v.name)) || null;
 }
 
 function playFemaleTTS(text) {
@@ -201,19 +202,16 @@ function playFemaleTTS(text) {
   utterance.pitch = 1;
   utterance.voice = getFemaleVoice();
 
-  /* Word-by-word output */
+  /* Word-by-word display */
   const words = text.split(/\s+/);
   ttsOutput.textContent = "";
   let index = 0;
-
   const wordTimer = setInterval(() => {
-    if (index >= words.length) {
-      clearInterval(wordTimer);
-      return;
-    }
+    if (index >= words.length) return clearInterval(wordTimer);
     ttsOutput.textContent += words[index] + " ";
     index++;
   }, 150);
+
 
   /* Live2D sync (existing helper) */
   utterance.onstart = () => {
@@ -228,7 +226,30 @@ function playFemaleTTS(text) {
 
   speechSynthesis.speak(utterance);
 }
-  
+
+  /* Live2D gestures + expression */
+  utterance.onstart = () => {
+    if (window.model) {
+      // Neutral emotion expression
+      try { window.model.expression("F01"); } catch {}
+      // Random TapBody gesture
+      try {
+        const motions = window.model.motions?.TapBody;
+        if (motions?.length) {
+          const m = motions[Math.floor(Math.random() * motions.length)];
+          window.model.motion("TapBody", m.File);
+        }
+      } catch {}
+    }
+  };
+
+  utterance.onend = () => {
+    clearInterval(wordTimer);
+  };
+
+  speechSynthesis.speak(utterance);
+}
+
 /* ===============================
    Staff Speak Button
 ================================ */
@@ -237,42 +258,13 @@ speakBtn.addEventListener("click", () => {
   if (!text) return;
 
   if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({
-      type: "speak_text",
-      text
-    }));
+    socket.send(JSON.stringify({ type: "speak_text", text }));
   } else {
-     playFemaleTTS(text);
+    playFemaleTTS(text);
   }
 
   ttsInput.value = "";
 });
-
-// Live2D TTS animation helper
-function speakWithModel(text, emotion = "neutral") {
-  if (!window.model) return;
-
-  const expressionMap = {
-    happy: "Smile",
-    sad: "Frown",
-    angry: "Angry",
-    surprise: "Surprised",
-    neutral: null
-  };
-
-  const expr = expressionMap[emotion];
-  if (expr) {
-    try { window.model.expression(expr); } catch {}
-  }
-
-  try {
-    const motions = window.model.motions?.TapBody;
-    if (motions?.length) {
-      const m = motions[Math.floor(Math.random() * motions.length)];
-      window.model.motion("TapBody", m.File);
-    }
-  } catch {}
-}
 
 // Ensure PIXI canvas does not block UI clicks
 setTimeout(() => {
@@ -284,6 +276,7 @@ setTimeout(() => {
 
 </body>
 </html>
+
 
 
 
