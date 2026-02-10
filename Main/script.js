@@ -1,5 +1,6 @@
 // ===============================
-// TTS + Word Output + Lip Sync
+// TTS + Expression + Gesture + Lip Sync
+// (Haru model compliant, no sounds)
 // ===============================
 const ttsInput = document.getElementById("tts-input");
 const ttsButton = document.getElementById("tts-button");
@@ -16,6 +17,58 @@ function getFemaleVoice() {
   );
 }
 
+// ===============================
+// Live2D Helpers (Cubism 4)
+// ===============================
+function setExpression(name) {
+  const model = window.live2dModel;
+  if (!model?.internalModel?.expressionManager) return;
+
+  try {
+    model.internalModel.expressionManager.setExpression(name);
+  } catch {
+    console.warn("Expression not found:", name);
+  }
+}
+
+function playMotion(group, index = 0, priority = 2) {
+  const model = window.live2dModel;
+  if (!model?.internalModel?.motionManager) return;
+
+  try {
+    model.internalModel.motionManager.startMotion(group, index, priority);
+  } catch {
+    console.warn("Motion not found:", group, index);
+  }
+}
+
+// ===============================
+// Text → Expression Logic
+// ===============================
+function analyzeExpression(text) {
+  const t = text.toLowerCase();
+
+  if (t.includes("thank") || t.includes("welcome"))
+    return "F02"; // happy
+
+  if (t.includes("warning") || t.includes("important"))
+    return "F04"; // serious
+
+  if (t.includes("why") || t.includes("how"))
+    return "F05"; // thinking
+
+  if (t.includes("!") || t.includes("wow"))
+    return "F06"; // surprised
+
+  if (t.includes("sorry") || t.includes("unfortunately"))
+    return "F07"; // sad
+
+  return "F01"; // neutral
+}
+
+// ===============================
+// TTS Button
+// ===============================
 ttsButton.addEventListener("click", () => {
   const text = ttsInput.value.trim();
   if (!text) return;
@@ -27,10 +80,13 @@ ttsButton.addEventListener("click", () => {
   utterance.rate = 1;
   utterance.voice = getFemaleVoice() || null;
 
+  // ===============================
   // Word output
+  // ===============================
   const words = text.split(/\s+/);
   ttsOutput.textContent = "";
   let wordIndex = 0;
+
   const wordTimer = setInterval(() => {
     if (wordIndex >= words.length) return clearInterval(wordTimer);
     ttsOutput.textContent += words[wordIndex] + " ";
@@ -38,47 +94,67 @@ ttsButton.addEventListener("click", () => {
   }, 150);
 
   // ===============================
-  // Word-count based lip sync
+  // On TTS start
   // ===============================
   utterance.onstart = () => {
     const core = window.live2dCore;
     if (!core) return console.warn("❌ Live2D core not ready");
 
+    // Expression
+    const expression = analyzeExpression(text);
+    setExpression(expression);
+
+    // Idle motion
+    playMotion("Idle", Math.random() > 0.5 ? 1 : 0);
+
+    // Random TapBody gestures during speech
+    const gestureTimer = setInterval(() => {
+      const idx = Math.floor(Math.random() * 4);
+      playMotion("TapBody", idx, 3);
+    }, 2800);
+
+    utterance._gestureTimer = gestureTimer;
+
+    // ===============================
+    // Lip Sync (ParamMouthOpenY only)
+    // ===============================
     let currentWord = 0;
-    const wordDuration = 300; // ms per word
+    const wordDuration = 300;
     let elapsed = 0;
 
-    const simTicker = new PIXI.Ticker();
-    simTicker.add((deltaTime) => {
-      elapsed += deltaTime * 16.67; // approx ms per tick
+    const lipTicker = new PIXI.Ticker();
+    lipTicker.add((delta) => {
+      elapsed += delta * 16.67;
 
-      const cycleTime = elapsed % wordDuration;
-      const half = wordDuration / 2;
-      const mouth = cycleTime < half ? 1.0 : 0.2; // open then close
+      const cycle = elapsed % wordDuration;
+      const mouth =
+        cycle < wordDuration / 2 ? 1.0 : 0.2;
+
       core.setParameterValueById("ParamMouthOpenY", mouth);
 
       if (elapsed >= (currentWord + 1) * wordDuration) {
         currentWord++;
         if (currentWord >= words.length) {
-          simTicker.stop();
-          // smooth mouth close
-          let t = 0;
-          const closeTicker = new PIXI.Ticker();
-          closeTicker.add(() => {
-            t += 0.1;
-            const v = Math.max(0, 0.2 * (1 - t));
-            core.setParameterValueById("ParamMouthOpenY", v);
-            if (t >= 1) closeTicker.stop();
-          });
-          closeTicker.start();
+          lipTicker.stop();
+          core.setParameterValueById("ParamMouthOpenY", 0);
         }
       }
     });
-    simTicker.start();
+
+    lipTicker.start();
   };
 
+  // ===============================
+  // On TTS end
+  // ===============================
   utterance.onend = () => {
     clearInterval(wordTimer);
+
+    if (utterance._gestureTimer)
+      clearInterval(utterance._gestureTimer);
+
+    setExpression("F01");
+    playMotion("Idle", 0);
   };
 
   speechSynthesis.speak(utterance);
