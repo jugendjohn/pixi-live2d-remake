@@ -11,110 +11,128 @@
     autoStart: true,
   });
 
+  // Canvas behind UI, allow clicks
   app.view.style.position = "fixed";
   app.view.style.top = "0";
   app.view.style.left = "0";
   app.view.style.width = "100vw";
   app.view.style.height = "100vh";
-  app.view.style.pointerEvents = "none"; 
+  app.view.style.pointerEvents = "none";
   document.body.appendChild(app.view);
 
   const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
 
   try {
-    const live2dModel = await Live2DModel.from(MODEL_PATH);
+    const model = await Live2DModel.from(MODEL_PATH);
 
-    live2dModel.anchor.set(0.5);
-    const scaleFactor = (app.screen.height / live2dModel.height) * 0.9;
-    live2dModel.scale.set(scaleFactor);
-    live2dModel.x = app.screen.width * 0.25;
-    live2dModel.y = app.screen.height / 2;
+    // =================================================
+    // Placement & scale
+    // =================================================
+    model.anchor.set(0.5);
+    const scaleFactor = (app.screen.height / model.height) * 0.9;
+    model.scale.set(scaleFactor);
+    model.x = app.screen.width * 0.25;
+    model.y = app.screen.height / 2;
 
-    live2dModel.eventMode = "static"; 
-    live2dModel.cursor = "pointer";
+    model.eventMode = "static";
+    model.cursor = "pointer";
 
-    app.stage.addChild(live2dModel);
+    app.stage.addChild(model);
 
-    live2dModel.internalModel.settings.eyeBlink = true;
-    const live2dCore = live2dModel.internalModel.coreModel;
+    model.internalModel.settings.eyeBlink = true;
+    const core = model.internalModel.coreModel;
 
-    // Expose globally for script.js
-    window.live2dModel = live2dModel;
-    window.live2dCore = live2dCore;
+    // Expose globally
+    window.model = model;
+    window.live2dCore = core;
 
     console.log("✅ Model loaded");
 
-    // Interaction handlers (drag, click)
+    // =================================================
+    // Interaction: Head / Body / Drag
+    // =================================================
     let dragging = false;
     let dragX = 0, dragY = 0;
 
-    const stopDrag = () => { dragging = false; dragX = 0; dragY = 0; };
+    const stopDrag = () => {
+      dragging = false;
+      dragX = 0;
+      dragY = 0;
+    };
 
-    live2dModel.on("pointerdown", e => {
+    model.on("pointerdown", e => {
       const x = e.data.global.x;
       const y = e.data.global.y;
       dragging = true;
 
-      if (live2dModel.hitTest("Head", x, y)) {
-        const expressions =
-          live2dModel.internalModel.motionManager?.expressionManager?._motions;
+      // Head click: random expression
+      if (model.hitTest("Head", x, y)) {
+        const expressions = model.internalModel.motionManager?.expressionManager?._motions;
         if (expressions && expressions.size > 0) {
           const keys = [...expressions.keys()];
           const key = keys[Math.floor(Math.random() * keys.length)];
-          live2dModel.expression(key);
+          model.expression(key);
         }
         return;
       }
 
-      if (live2dModel.hitTest("Body", x, y)) {
-        const tapMotions = live2dModel.motions?.TapBody;
+      // Body click: random TapBody motion
+      if (model.hitTest("Body", x, y)) {
+        const tapMotions = model.motions?.TapBody;
         if (tapMotions && tapMotions.length > 0) {
           const motion = tapMotions[Math.floor(Math.random() * tapMotions.length)];
-          live2dModel.motion(
+          model.motion(
             "TapBody",
             motion.File,
-            { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
+            {
+              fadeIn: motion.FadeInTime || 0.5,
+              fadeOut: motion.FadeOutTime || 0.5
+            }
           );
         }
         return;
       }
     });
 
-    live2dModel.on("pointermove", e => {
+    model.on("pointermove", e => {
       const x = e.data.global.x;
       const y = e.data.global.y;
+
       if (!dragging) {
-        live2dModel.focus(x, y);
+        model.focus(x, y);
         return;
       }
-      dragX = (x - live2dModel.x) / (live2dModel.width * 0.5);
-      dragY = (y - live2dModel.y) / (live2dModel.height * 0.5);
+
+      dragX = (x - model.x) / (model.width * 0.5);
+      dragY = (y - model.y) / (model.height * 0.5);
       dragX = Math.max(-1, Math.min(1, dragX));
       dragY = Math.max(-1, Math.min(1, dragY));
     });
 
-    live2dModel.on("pointerup", stopDrag);
-    live2dModel.on("pointerupoutside", stopDrag);
+    model.on("pointerup", stopDrag);
+    model.on("pointerupoutside", stopDrag);
 
-    // Eye/Body follow ticker
+    // =================================================
+    // Ticker: body/eye follow
+    // =================================================
     const ticker = new PIXI.Ticker();
     ticker.add(() => {
       const dx = dragging ? dragX : 0;
       const dy = dragging ? dragY : 0;
 
-      live2dCore.setParameterValueById("ParamAngleX", dx * 30);
-      live2dCore.setParameterValueById("ParamAngleY", dy * 30);
-      live2dCore.setParameterValueById("ParamAngleZ", dx * dy * -30);
-      live2dCore.setParameterValueById("ParamBodyAngleX", dx * 10);
-      live2dCore.setParameterValueById("ParamEyeBallX", dx);
-      live2dCore.setParameterValueById("ParamEyeBallY", dy);
+      core.setParameterValueById("ParamAngleX", dx * 30);
+      core.setParameterValueById("ParamAngleY", dy * 30);
+      core.setParameterValueById("ParamAngleZ", dx * dy * -30);
+      core.setParameterValueById("ParamBodyAngleX", dx * 10);
+      core.setParameterValueById("ParamEyeBallX", dx);
+      core.setParameterValueById("ParamEyeBallY", dy);
 
-      live2dModel.update(1);
+      model.update(1);
       app.renderer.render(app.stage);
     });
     ticker.start();
 
-  } catch(e){
+  } catch (e) {
     console.error("❌ MODEL LOAD ERROR:", e);
   }
 })();
