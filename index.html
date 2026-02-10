@@ -196,10 +196,13 @@ const speakBtn = document.getElementById("tts-button");
 const openStaffBtn = document.getElementById("open-staff-tts");
 
 let socket = null;
+window.socket = null;
+
 
 try {
   if (location.protocol !== "https:") {
     socket = new WebSocket("ws://127.0.0.1:8000/ws");
+    window.socket = socket;
   }
 } catch(e) {
   console.error("WebSocket init failed:", e);
@@ -224,7 +227,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Toggle Staff TTS panel
   openStaffBtn.addEventListener("click", () => {
-    staffTTSPanel.style.display = staffTTSPanel.style.display === "flex" ? "none" : "flex";
+    if (staffTTSPanel.style.display === "flex") {
+      staffTTSPanel.style.display = "none";
+    } else {
+      staffTTSPanel.style.display = "flex";
+      staffTTSPanel.style.flexDirection = "column";
+    }
   });
 
   // Handle Speak button
@@ -233,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!text) return;
 
     // Send to WebSocket if connected
-    if (window.socket && socket.readyState === WebSocket.OPEN) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ type: "speak_text", text }));
     } else {
       // Fallback: browser TTS
@@ -267,6 +275,7 @@ function speakWithModel(text, emotion="neutral"){
 
 </body>
 </html>
+
 
 
 
