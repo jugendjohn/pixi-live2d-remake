@@ -272,11 +272,6 @@ function speakWithModel(text, emotion = "neutral") {
       window.model.motion("TapBody", m.File);
     }
   } catch {}
-
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 1;
-  utter.pitch = 1.05;
-  speechSynthesis.speak(utter);
 }
 
 // Ensure PIXI canvas does not block UI clicks
@@ -289,4 +284,5 @@ setTimeout(() => {
 
 </body>
 </html>
+
 
