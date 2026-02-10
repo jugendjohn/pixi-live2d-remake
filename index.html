@@ -55,21 +55,22 @@ canvas {
   border: 1px solid #e0e0e0;
 }
 
-/* STAFF TTS PANEL */
+/* STAFF TTS PANEL — ALWAYS VISIBLE */
 #staff-tts-panel {
-  display: none; /* hidden initially */
   position: fixed;
-  bottom: 60px; /* above the toggle button */
-  right: 16px;
+  bottom: 20px;
+  right: 20px;
   width: 300px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.2);
   padding: 16px;
+  display: flex;
   flex-direction: column;
   gap: 10px;
   z-index: 100;
 }
+
 #staff-tts-panel textarea {
   width: 100%;
   min-height: 80px;
@@ -78,19 +79,9 @@ canvas {
   padding: 8px;
   resize: none;
 }
+
 #staff-tts-panel button {
   padding: 8px;
-  border-radius: 8px;
-  border: none;
-  background: #4f6cff;
-  color: #fff;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-/* STAFF TTS TOGGLE BUTTON */
-#open-staff-tts {
-  padding: 8px 12px;
   border-radius: 8px;
   border: none;
   background: #4f6cff;
@@ -126,21 +117,6 @@ canvas {
   font-size: 14px;
   font-weight: 600;
 }
-
-/* PATIENT TAB */
-#patient-tab {
-  position: absolute;
-  top: 20px;
-  right: 120px;
-  background: #4f6cff;
-  color: #fff;
-  padding: 12px 18px;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: none;
-  z-index: 20;
-}
 </style>
 </head>
 
@@ -150,24 +126,11 @@ canvas {
 <div id="tts-panel">
   <div class="tts-header">Virtual Companion</div>
   <div id="tts-output"></div>
-  <!-- Staff TTS toggle button bottom-right -->
-  <button id="open-staff-tts" style="
-    position: absolute;
-    bottom: 16px;
-    right: 16px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: none;
-    background: #4f6cff;
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-  ">Staff TTS</button>
 </div>
 
-<!-- STAFF TTS PANEL -->
+<!-- STAFF TTS PANEL (ALWAYS ON) -->
 <div id="staff-tts-panel">
-  <div class="tts-header">Staff TTS Control</div>
+  <div class="tts-header">Staff TTS</div>
   <textarea id="tts-input" placeholder="Enter text to speak"></textarea>
   <button id="tts-button">Speak</button>
 </div>
@@ -177,8 +140,6 @@ canvas {
   <div id="dispenser-username"></div>
   <div id="dispenser-medicine"></div>
 </div>
-
-<div id="patient-tab">Patients</div>
 
 <!-- PIXI / LIVE2D -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
@@ -190,86 +151,77 @@ canvas {
 
 <script>
 const ttsOutput = document.getElementById("tts-output");
-const staffTTSPanel = document.getElementById("staff-tts-panel");
 const ttsInput = document.getElementById("tts-input");
 const speakBtn = document.getElementById("tts-button");
-const openStaffBtn = document.getElementById("open-staff-tts");
 
 let socket = null;
 window.socket = null;
-
 
 try {
   if (location.protocol !== "https:") {
     socket = new WebSocket("ws://127.0.0.1:8000/ws");
     window.socket = socket;
   }
-} catch(e) {
+} catch (e) {
   console.error("WebSocket init failed:", e);
 }
 
-if(socket){
+if (socket) {
   socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
-    if(data.type === "tts_status"){
+    if (data.type === "tts_status") {
       ttsOutput.textContent = data.text || "";
       speakWithModel(data.text, data.emotion || "neutral");
     }
   };
 }
 
-// Ensure DOM is ready
-document.addEventListener("DOMContentLoaded", () => {
-  const staffTTSPanel = document.getElementById("staff-tts-panel");
-  const openStaffBtn = document.getElementById("open-staff-tts");
-  const speakBtn = document.getElementById("tts-button");
-  const ttsInput = document.getElementById("tts-input");
+// Speak button
+speakBtn.addEventListener("click", () => {
+  const text = ttsInput.value.trim();
+  if (!text) return;
 
-  // Toggle Staff TTS panel
-  openStaffBtn.addEventListener("click", () => {
-    if (staffTTSPanel.style.display === "flex") {
-      staffTTSPanel.style.display = "none";
-    } else {
-      staffTTSPanel.style.display = "flex";
-      staffTTSPanel.style.flexDirection = "column";
-    }
-  });
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: "speak_text", text }));
+  } else {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1;
+    utter.pitch = 1.05;
+    speechSynthesis.speak(utter);
+  }
 
-  // Handle Speak button
-  speakBtn.addEventListener("click", () => {
-    const text = ttsInput.value.trim();
-    if (!text) return;
-
-    // Send to WebSocket if connected
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ type: "speak_text", text }));
-    } else {
-      // Fallback: browser TTS
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.rate = 1;
-      utter.pitch = 1.05;
-      speechSynthesis.speak(utter);
-    }
-
-    ttsInput.value = ""; // clear input
-  });
+  ttsInput.value = "";
 });
 
 // Live2D TTS animation helper
-function speakWithModel(text, emotion="neutral"){
-  if(!window.model) return;
-  const expressionMap = {happy:"Smile", sad:"Frown", angry:"Angry", surprise:"Surprised", neutral:null};
+function speakWithModel(text, emotion = "neutral") {
+  if (!window.model) return;
+
+  const expressionMap = {
+    happy: "Smile",
+    sad: "Frown",
+    angry: "Angry",
+    surprise: "Surprised",
+    neutral: null
+  };
+
   const expr = expressionMap[emotion];
-  if(expr) try{ window.model.expression(expr); } catch(e){ }
-  try{
+  if (expr) {
+    try { window.model.expression(expr); } catch {}
+  }
+
+  try {
     const motions = window.model.motions?.TapBody;
-    if(motions && motions.length>0){
-      const m = motions[Math.floor(Math.random()*motions.length)];
+    if (motions?.length) {
+      const m = motions[Math.floor(Math.random() * motions.length)];
       window.model.motion("TapBody", m.File);
     }
-  }catch(e){}
+  } catch {}
+
   const utter = new SpeechSynthesisUtterance(text);
-  utter.rate=1; utter.pitch=1.05; speechSynthesis.speak(utter);
+  utter.rate = 1;
+  utter.pitch = 1.05;
+  speechSynthesis.speak(utter);
 }
 
 // Ensure PIXI canvas does not block UI clicks
@@ -278,7 +230,6 @@ setTimeout(() => {
     c.style.pointerEvents = "none";
   });
 }, 500);
-
 </script>
 
 </body>
