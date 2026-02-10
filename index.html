@@ -242,7 +242,7 @@ speakBtn.addEventListener("click", () => {
       text
     }));
   } else {
-    playFemaleTTS(text);
+    speakWithModel(text, "neutral");
   }
 
   ttsInput.value = "";
@@ -284,5 +284,6 @@ setTimeout(() => {
 
 </body>
 </html>
+
 
 
