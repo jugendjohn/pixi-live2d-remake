@@ -1,134 +1,103 @@
-(async () => {
-  if (typeof PIXI === "undefined") return console.error("❌ PIXI NOT LOADED");
-  if (!PIXI.live2d || !PIXI.live2d.Live2DModel)
-    return console.error("❌ pixi-live2d-display NOT LOADED");
+const ttsInput = document.getElementById("tts-input");
+const ttsButton = document.getElementById("tts-button");
+const ttsOutput = document.getElementById("tts-output");
 
-  const { Live2DModel } = PIXI.live2d;
+let voices = [];
+speechSynthesis.onvoiceschanged = () => {
+  voices = speechSynthesis.getVoices();
+};
 
-  const app = new PIXI.Application({
-    background: "#f4f3f2",
-    resizeTo: window,
-    autoStart: true,
-  });
+function getFemaleVoice() {
+  return voices.find(v =>
+    /female|zira|samantha|victoria|susan/i.test(v.name)
+  );
+}
 
-  // Canvas behind UI, allow clicks
-  app.view.style.position = "fixed";
-  app.view.style.top = "0";
-  app.view.style.left = "0";
-  app.view.style.width = "100vw";
-  app.view.style.height = "100vh";
-  app.view.style.pointerEvents = "none"; 
-  document.body.appendChild(app.view);
+function setExpression(name) {
+  const model = window.live2dModel;
+  if (!model?.internalModel?.expressionManager) return;
+  try { model.internalModel.expressionManager.setExpression(name); } catch {}
+}
 
-  const MODEL_PATH = "Samples/Resources/Haru/Haru.model3.json";
+function playMotion(group, index = 0, priority = 2) {
+  const model = window.live2dModel;
+  if (!model?.internalModel?.motionManager) return;
+  try { model.internalModel.motionManager.startMotion(group, index, priority); } catch {}
+}
 
-  try {
-    const live2dModel = await Live2DModel.from(MODEL_PATH);
+function analyzeExpression(text) {
+  const t = text.toLowerCase();
+  if (t.includes("thank") || t.includes("welcome")) return "F02";
+  if (t.includes("warning") || t.includes("important")) return "F04";
+  if (t.includes("why") || t.includes("how")) return "F05";
+  if (t.includes("!") || t.includes("wow")) return "F06";
+  if (t.includes("sorry") || t.includes("unfortunately")) return "F07";
+  return "F01";
+}
 
-    // =================================================
-    // Placement & scale
-    // =================================================
-    live2dModel.anchor.set(0.5);
-    const scaleFactor = (app.screen.height / live2dModel.height) * 0.9;
-    live2dModel.scale.set(scaleFactor);
-    live2dModel.x = app.screen.width * 0.25;
-    live2dModel.y = app.screen.height / 2;
+ttsButton.addEventListener("click", () => {
+  const text = ttsInput.value.trim();
+  if (!text) return;
 
-    live2dModel.eventMode = "static"; 
-    live2dModel.cursor = "pointer";
+  speechSynthesis.cancel();
 
-    app.stage.addChild(live2dModel);
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.voice = getFemaleVoice() || null;
+  utterance.pitch = 1;
+  utterance.rate = 1;
 
-    live2dModel.internalModel.settings.eyeBlink = true;
-    const live2dCore = live2dModel.internalModel.coreModel;
+  // Word output
+  const words = text.split(/\s+/);
+  ttsOutput.textContent = "";
+  let wordIndex = 0;
+  const wordTimer = setInterval(() => {
+    if (wordIndex >= words.length) return clearInterval(wordTimer);
+    ttsOutput.textContent += words[wordIndex] + " ";
+    wordIndex++;
+  }, 150);
 
-    // Expose globally (name alignment ONLY)
-    window.live2dModel = live2dModel;
-    window.live2dCore = live2dCore;
+  utterance.onstart = () => {
+    const core = window.live2dCore;
+    if (!core) return;
 
-    console.log("✅ Model loaded");
+    const expr = analyzeExpression(text);
+    setExpression(expr);
 
-    // =================================================
-    // Interaction: Head / Body / Drag
-    // =================================================
-    let dragging = false;
-    let dragX = 0, dragY = 0;
+    playMotion("Idle", Math.random() > 0.5 ? 1 : 0);
 
-    const stopDrag = () => { dragging = false; dragX = 0; dragY = 0; };
+    const gestureTimer = setInterval(() => {
+      const idx = Math.floor(Math.random() * 4);
+      playMotion("TapBody", idx, 3);
+    }, 2800);
+    utterance._gestureTimer = gestureTimer;
 
-    live2dModel.on("pointerdown", e => {
-      const x = e.data.global.x;
-      const y = e.data.global.y;
+    // Lip sync
+    let currentWord = 0, elapsed = 0;
+    const wordDuration = 300;
+    const lipTicker = new PIXI.Ticker();
+    lipTicker.add(delta => {
+      elapsed += delta * 16.67;
+      const mouth = (elapsed % wordDuration) < (wordDuration/2) ? 1 : 0.2;
+      core.setParameterValueById("ParamMouthOpenY", mouth);
 
-      dragging = true;
-
-      // Head click: random expression
-      if (live2dModel.hitTest("Head", x, y)) {
-        const expressions =
-          live2dModel.internalModel.motionManager?.expressionManager?._motions;
-
-        if (expressions && expressions.size > 0) {
-          const keys = [...expressions.keys()];
-          const key = keys[Math.floor(Math.random() * keys.length)];
-          live2dModel.expression(key);
+      if (elapsed >= (currentWord + 1) * wordDuration) {
+        currentWord++;
+        if (currentWord >= words.length) {
+          lipTicker.stop();
+          core.setParameterValueById("ParamMouthOpenY", 0);
         }
-        return;
-      }
-
-      // Body click: random TapBody motion
-      if (live2dModel.hitTest("Body", x, y)) {
-        const tapMotions = live2dModel.motions?.TapBody;
-        if (tapMotions && tapMotions.length > 0) {
-          const motion = tapMotions[Math.floor(Math.random() * tapMotions.length)];
-          live2dModel.motion(
-            "TapBody",
-            motion.File,
-            { fadeIn: motion.FadeInTime || 0.5, fadeOut: motion.FadeOutTime || 0.5 }
-          );
-        }
-        return;
       }
     });
+    lipTicker.start();
+  };
 
-    live2dModel.on("pointermove", e => {
-      const x = e.data.global.x;
-      const y = e.data.global.y;
+  utterance.onend = () => {
+    clearInterval(wordTimer);
+    if (utterance._gestureTimer) clearInterval(utterance._gestureTimer);
+    setExpression("F01");
+    playMotion("Idle", 0);
+  };
 
-      if (!dragging) {
-        live2dModel.focus(x, y);
-        return;
-      }
-
-      dragX = (x - live2dModel.x) / (live2dModel.width * 0.5);
-      dragY = (y - live2dModel.y) / (live2dModel.height * 0.5);
-      dragX = Math.max(-1, Math.min(1, dragX));
-      dragY = Math.max(-1, Math.min(1, dragY));
-    });
-
-    live2dModel.on("pointerup", stopDrag);
-    live2dModel.on("pointerupoutside", stopDrag);
-
-    // =================================================
-    // Ticker: body/eye follow
-    // =================================================
-    const ticker = new PIXI.Ticker();
-    ticker.add(() => {
-      const dx = dragging ? dragX : 0;
-      const dy = dragging ? dragY : 0;
-
-      live2dCore.setParameterValueById("ParamAngleX", dx * 30);
-      live2dCore.setParameterValueById("ParamAngleY", dy * 30);
-      live2dCore.setParameterValueById("ParamAngleZ", dx * dy * -30);
-      live2dCore.setParameterValueById("ParamBodyAngleX", dx * 10);
-      live2dCore.setParameterValueById("ParamEyeBallX", dx);
-      live2dCore.setParameterValueById("ParamEyeBallY", dy);
-
-      live2dModel.update(1);
-      app.renderer.render(app.stage);
-    });
-    ticker.start();
-
-  } catch (e) {
-    console.error("❌ MODEL LOAD ERROR:", e);
-  }
-})();
+  speechSynthesis.speak(utterance);
+  ttsInput.value = "";
+});
