@@ -271,12 +271,15 @@ function speakWithModel(text, emotion="neutral"){
   const utter = new SpeechSynthesisUtterance(text);
   utter.rate=1; utter.pitch=1.05; speechSynthesis.speak(utter);
 }
+
+// Ensure PIXI canvas does not block UI clicks
+setTimeout(() => {
+  document.querySelectorAll("canvas").forEach(c => {
+    c.style.pointerEvents = "none";
+  });
+}, 500);
+
 </script>
 
 </body>
 </html>
-
-
-
-
-
